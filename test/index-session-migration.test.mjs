@@ -1,4 +1,4 @@
-// index-import-claude.test.mjs — Claude 集成（标准来源入口）
+// index-session-migration.test.mjs — Claude 集成（标准来源入口）
 // 单文件与目录批量落盘、标题（custom-title）、幂等、工具历史、辅助 transcript 跳过。
 // 由 test/index.test.mjs 按横幅分组拆出（纯移动：用例与断言未改）。
 import { test, beforeEach } from 'node:test'

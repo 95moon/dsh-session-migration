@@ -22,7 +22,7 @@ let registryDir
 
 beforeEach(() => {
   process.env.DSH_HOME = freshDshHome('dsh-home-restore-')
-  registryDir = join(process.env.DSH_HOME, 'dsh-chat-import')
+  registryDir = join(process.env.DSH_HOME, 'dsh-session-migration')
   mkdirSync(registryDir, { recursive: true })
 })
 

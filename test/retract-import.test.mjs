@@ -1,7 +1,7 @@
 // retract-import.test.mjs — 导入识别 / 撤回（只读）：自包含 mock 集成测试。
 // 走真实 apply → register → execute 路径：mock sessionPersistence（list /
 // readFrom / locate，刻意不提供 delete / remove 面）+ mock fs（追踪调用，REQ-33
-// 工具不应触碰）+ 真实 imports registry（$DSH_HOME/dsh-chat-import）。
+// 工具不应触碰）+ 真实 imports registry（$DSH_HOME/dsh-session-migration）。
 //
 // 覆盖：list_imported_sessions 以 imports registry 反查为权威（locate 路径正确、
 // 标题/源路径/导入时间）、无标记会话不出现（registry 记录也不能让无标记会话上榜）、

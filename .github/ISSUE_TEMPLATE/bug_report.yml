@@ -24,7 +24,7 @@ body:
     attributes:
       label: Environment
       description: dsh version, plugin version, OS, Node.js version
-      placeholder: dsh 0.1.0-rc.6 · dsh-chat-import 0.4.0 · Windows 11 · Node 22.13
+      placeholder: dsh 0.1.0-rc.6 · dsh-session-migration 0.4.0 · Windows 11 · Node 22.13
     validations:
       required: true
   - type: textarea

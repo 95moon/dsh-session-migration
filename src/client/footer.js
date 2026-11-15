@@ -1,9 +1,15 @@
-    /** 插件 logo（assets/import.svg）的两条路径（viewBox 0 0 1024 1024）：LogoIcon 的内联
+    /** 插件 logo（assets/icon.svg）的三条路径（viewBox 0 0 1024 1024）：LogoIcon 的内联
      *  绘制与设置导航图标的 CSS mask 共用这一份。路径里只有数字 / 字母 / 空格 / . -，拼进
-     *  data URI 不需要额外编码。 */
+     *  data URI 不需要额外编码。
+     *
+     *  图形：一枚圆角方框（会话容器）内含上下两支相向的箭头，表示「会话在两个工具之间
+     *  双向迁移」——导入与导出同权，不再是单向的「导入」。第一条路径是外框与内框两个
+     *  子路径，靠 evenodd 挖空成环（外框顺时针、内框也顺时针，只有 evenodd 能挖空，
+     *  nonzero 会填实）；后两条分别是向右、向左的箭头。 */
     const LOGO_PATHS = [
-      "M905.309091 628.363636c-27.927273 0-46.545455 18.618182-46.545455 46.545455v223.418182H165.236364V125.672727h200.145454c27.927273 0 46.545455-18.618182 46.545455-46.545454s-18.618182-46.545455-46.545455-46.545455H118.690909c-27.927273 0-46.545455 18.618182-46.545454 46.545455v865.745454c0 27.927273 18.618182 46.545455 46.545454 46.545455h786.618182c27.927273 0 46.545455-18.618182 46.545454-46.545455v-269.963636c0-27.927273-18.618182-46.545455-46.545454-46.545455z",
-      "M556.218182 558.545455h349.090909v-93.09091h-269.963636l293.236363-269.963636-65.163636-65.163636-307.2 283.927272V116.363636h-93.090909V558.545455h4.654545z",
+      "M224 96L800 96A128 128 0 0 1 928 224L928 800A128 128 0 0 1 800 928L224 928A128 128 0 0 1 96 800L96 224A128 128 0 0 1 224 96ZM272 208L752 208A64 64 0 0 1 816 272L816 752A64 64 0 0 1 752 816L272 816A64 64 0 0 1 208 752L208 272A64 64 0 0 1 272 208Z",
+      "M272 360L600 360L600 320L752 400L600 480L600 440L272 440Z",
+      "M752 584L424 584L424 544L272 624L424 704L424 664L752 664Z",
     ];
 
     /** 插件 logo（跟随 currentColor 适配明暗主题） */
@@ -13,7 +19,7 @@
         width: s, height: s, viewBox: "0 0 1024 1024", fill: "none",
         xmlns: "http://www.w3.org/2000/svg", style: { flex: "none" },
         "aria-hidden": true,
-      }, ...LOGO_PATHS.map((d) => h("path", { d, fill: "currentColor" })));
+      }, ...LOGO_PATHS.map((d) => h("path", { d, fill: "currentColor", fillRule: "evenodd" })));
     }
 
     /** 右侧栏 guide 胶囊图标（tab 类型注册的 guide entry icon，组件面收 {size} 按需
@@ -23,11 +29,11 @@
       return h(LogoIcon, { size });
     }
 
-    const SETTINGS_NAV_MARKER = "data-dsh-chat-import-settings-nav";
-    const SETTINGS_NAV_STYLE_ID = "dsh-chat-import-settings-nav-style";
+    const SETTINGS_NAV_MARKER = "data-dsh-session-migration-settings-nav";
+    const SETTINGS_NAV_STYLE_ID = "dsh-session-migration-settings-nav-style";
     /** 本插件在宿主客户端模块系统里的 entry 名（= package.json name = lib/client.js 里
      *  `__ModuleLoader__.load({ id })` 的那个 id），也是宿主给样式表记账用的包名。 */
-    const PLUGIN_ID = "dsh-chat-import";
+    const PLUGIN_ID = "dsh-session-migration";
     /** 本插件自己那张样式表的唯一键（宿主官方前端包同款写法）：重载后靠它认回自己那一张。 */
     const SETTINGS_NAV_PLUGIN_CSS = PLUGIN_ID + "/settings-nav.css";
     /** 别人留下的无标记样式表被挪到这个值上：它不是任何包的 entry 名，因此宿主的认领扫描
@@ -60,7 +66,7 @@
       style.dataset.plugin = PLUGIN_ID;
       style.dataset.pluginCss = SETTINGS_NAV_PLUGIN_CSS;
       const maskSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'%3E"
-        + LOGO_PATHS.map((d) => "%3Cpath d='" + d + "' fill='black'/%3E").join("")
+        + LOGO_PATHS.map((d) => "%3Cpath d='" + d + "' fill='black' fill-rule='evenodd'/%3E").join("")
         + "%3C/svg%3E";
       const css = "\n" +
         "[" + SETTINGS_NAV_MARKER + "] > svg:first-child {\n" +
@@ -86,7 +92,7 @@
      *  为什么需要：宿主的 claimStyles 在**任何**模块物化时把文档里所有未打标签的 <style>
      *  收进正在物化的包名下，而 removeOwnedStyles 在该包重载时整批删除。本插件的面板
      *  重建很频繁（改面板必跑 build:client），于是别人的无标记样式表会被记到
-     *  dsh-chat-import 名下、并在本插件重建时一起消失（实测损失：dsh-meme 的两张样式表
+     *  dsh-session-migration 名下、并在本插件重建时一起消失（实测损失：dsh-meme 的两张样式表
      *  被删，表情包界面整份失去样式，只能刷新恢复）。dsh-claude-style 的 mountStylesheet
      *  同款处理。
      *

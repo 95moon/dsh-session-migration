@@ -135,7 +135,7 @@ for (const [key, spec] of Object.entries(MAP)) {
     if (!REFRESH && fs.existsSync(cached)) {
       markSvg = read(cached)
     } else {
-      const res = await fetch(spec.repo, { headers: { 'user-agent': 'dsh-chat-import-gen-logos' } })
+      const res = await fetch(spec.repo, { headers: { 'user-agent': 'dsh-session-migration-gen-logos' } })
       if (!res.ok) { console.error('gen-logos: 取不到 ' + spec.repo + '（' + res.status + '）'); process.exit(1) }
       markSvg = await res.text()
       if (spec.stripRect) markSvg = markSvg.replace(/<rect[^>]*\/>/g, '')

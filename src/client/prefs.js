@@ -1,4 +1,4 @@
-    const IMPORT_TAB_TYPE = "chat-import";
+    const IMPORT_TAB_TYPE = "session-migration";
     // 官方原生右侧栏（@deepseek-ai/dsh-client-ui-sidebar-right，DSH ≥ 0.1.5-rc.1，
     // peerDependencies 已抬升门槛）的打开面：footer 按钮点击时经
     // ctx.get('sidebarRight').openTab(kind) 打开「导入会话」tab（同一时刻展开右栏、
@@ -8,7 +8,7 @@
     let openNativeImportTab = null;
     // 侧边栏入口按钮开关（设置项 sidebarButton）：默认 true。
     // 经 localStorage 同步缓存避免初次渲染出现闪烁；通过事件监听在设置页修改时即刻生效。
-    const SIDEBAR_PREF_KEY = "dsh-chat-import:sidebar-button";
+    const SIDEBAR_PREF_KEY = "dsh-session-migration:sidebar-button";
     function getStoredSidebarButton() {
       try {
         if (typeof window !== "undefined" && window.localStorage) {

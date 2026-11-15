@@ -15,7 +15,7 @@ import { freshDshHome } from './_support/tmp-db.mjs'
 
 process.env.DSH_HOME = freshDshHome('dsh-home-wsg-')
 
-const DEDICATED = join(process.env.DSH_HOME, 'dsh-chat-import-workspace')
+const DEDICATED = join(process.env.DSH_HOME, 'dsh-session-migration-workspace')
 
 // 归组契约 mock：dirs = 磁盘上真实存在的目录（另有真实 fs 兜底——专用导入工作区由被测
 // 代码自己 mkdir）；workspaces = 已注册工作区路径；sessionCwd = 会话 header 的 cwd

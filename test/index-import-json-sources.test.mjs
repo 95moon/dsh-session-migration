@@ -48,10 +48,10 @@ test('import_chatgpt 单文件：一文件多会话、恒返回 batch、schema �
   // 源文件目录——宿主只接受 cwd 与原工作区路径相等的挂接，源目录回退只会留下空工作区
   // 且会话仍留在「未分组」（docs/architecture.md D16）
   assert.equal(attached.length, 2)
-  assert.ok(attached.every((a) => a.ws === join(process.env.DSH_HOME, 'dsh-chat-import-workspace')), '落点为专用导入工作区')
+  assert.ok(attached.every((a) => a.ws === join(process.env.DSH_HOME, 'dsh-session-migration-workspace')), '落点为专用导入工作区')
   assert.deepEqual(attached.map((a) => a.id).sort(), ['import-conv-001', 'import-conv-002'])
   // 结果里如实回报归组落点与「本次新建了工作区」（用户可见的侧栏副作用）
-  assert.equal(value.workspace, join(process.env.DSH_HOME, 'dsh-chat-import-workspace'))
+  assert.equal(value.workspace, join(process.env.DSH_HOME, 'dsh-session-migration-workspace'))
   assert.equal(value.workspaceMode, 'dedicated')
   assert.equal(value.workspaceCreated, true)
 })
@@ -86,7 +86,7 @@ test('import_chatgpt 默认开关：无显式参数默认收集 system（默认�
     const settingsStub = {
       register(ns, schema) { return { ns, schema } },
       get() { return { importSystemPrompt: false } },
-      describe() { return [{ ns: 'chat-import', value: { importSystemPrompt: false }, revision: 1 }] },
+      describe() { return [{ ns: 'session-migration', value: { importSystemPrompt: false }, revision: 1 }] },
       watch() {},
       async update() {},
     }

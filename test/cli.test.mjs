@@ -1,4 +1,4 @@
-// test/cli.test.mjs — 独立 CLI（bin/dsh-chat-import.mjs）：真实子进程 + 临时 DSH_HOME
+// test/cli.test.mjs — 独立 CLI（bin/dsh-session-migration.mjs）：真实子进程 + 临时 DSH_HOME
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
@@ -8,7 +8,7 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { zstdCompressSync } from 'node:zlib'
 
-const CLI = join(dirname(fileURLToPath(import.meta.url)), '..', 'bin', 'dsh-chat-import.mjs')
+const CLI = join(dirname(fileURLToPath(import.meta.url)), '..', 'bin', 'dsh-session-migration.mjs')
 
 function run(args, home) {
   const res = spawnSync(process.execPath, [CLI, ...args], {
@@ -52,8 +52,8 @@ test('CLI export-md：目录里没有会话日志时大声失败', () => {
 
 test('CLI doctor：按插件同一 registry 目录对账磁盘会话目录，点名缺失与残留', () => {
   const home = mkdtempSync(join(tmpdir(), 'dsh-cli-doctor-'))
-  mkdirSync(join(home, 'dsh-chat-import'), { recursive: true })
-  writeFileSync(join(home, 'dsh-chat-import', 'imports.json'), JSON.stringify({
+  mkdirSync(join(home, 'dsh-session-migration'), { recursive: true })
+  writeFileSync(join(home, 'dsh-session-migration', 'imports.json'), JSON.stringify({
     version: 1,
     imports: {
       'src-a.jsonl': { kind: 'single', dshId: 'import-a', turns: 1 },

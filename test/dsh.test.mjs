@@ -407,7 +407,7 @@ test('discoverSessions format=dsh 发现 session.jsonl 会话', async () => {
 })
 
 // dsh 默认发现根随宿主 DSH_HOME 走（桌面 harness 域 ≠ ~/.dsh）：env 优先与
-// registryDir（$DSH_HOME/dsh-chat-import）同域，env 缺省回退 ~/.dsh（CLI 直跑）。
+// registryDir（$DSH_HOME/dsh-session-migration）同域，env 缺省回退 ~/.dsh（CLI 直跑）。
 test('defaultRoots：dsh 默认根优先 $DSH_HOME，env 缺省回退 ~/.dsh', () => {
   const prev = process.env.DSH_HOME
   try {
@@ -639,7 +639,7 @@ test('discoverSessions format=dsh 发现当前代次 session.v3.jsonl.zstd', asy
 })
 
 // 兼容我们自己的历史产物：导入会话的日志里有插件注入的「环境变更声明」（V3 形状
-// source.kind='plugin'，V4 形状 kind='plugin:chat-import'）与 system head。重导这些会话时
+// source.kind='plugin'，V4 形状 kind='plugin:session-migration'）与 system head。重导这些会话时
 // 注入声明不是用户提问——否则标题与每轮 prompt 都会变成那段声明。
 test('convertDshJsonl：同一 turn 多条带图 user/message → 图片累积不互相覆盖', async () => {
   const { convertDshJsonl } = await import('../lib/convert/index.mjs')
@@ -673,8 +673,8 @@ test('convertDshJsonl：跳过本插件注入的环境变更声明（V3 / V4 两
     { type: 'session', version: 3, id: 'session-own-1', cwd: '/demo/proj', createdAt: 1700000000000 },
     { type: 'turn/start', seq: 1, data: { turn: 1 } },
     { type: 'step/start', seq: 2, data: { turn: 1, step: 1 } },
-    { type: 'system/message', seq: 3, surfaceOp: 'append', data: { turn: 1, step: 1, message: { id: 'import:session-own-1:sys', role: 'system', content: [], source: { kind: 'plugin', plugin: 'chat-import' } } } },
-    { type: 'user/message', seq: 4, surfaceOp: 'append', data: { id: 'import:session-own-1:env', role: 'user', content: [{ type: 'text', text: '环境变更声明：本会话由 dsh-chat-import 从 claude 导入' }], source: { kind: 'plugin', plugin: 'chat-import' } } },
+    { type: 'system/message', seq: 3, surfaceOp: 'append', data: { turn: 1, step: 1, message: { id: 'import:session-own-1:sys', role: 'system', content: [], source: { kind: 'plugin', plugin: 'session-migration' } } } },
+    { type: 'user/message', seq: 4, surfaceOp: 'append', data: { id: 'import:session-own-1:env', role: 'user', content: [{ type: 'text', text: '环境变更声明：本会话由 dsh-session-migration 从 claude 导入' }], source: { kind: 'plugin', plugin: 'session-migration' } } },
     { type: 'user/message', seq: 5, surfaceOp: 'append', data: { id: 'u1', role: 'user', content: [{ type: 'text', text: '真实提问' }], source: { kind: 'user' } } },
     { type: 'assistant/message', seq: 6, surfaceOp: 'append', data: { turn: 1, step: 1, stream: [], message: { id: 'a1', role: 'assistant', content: [{ type: 'text', text: '好' }], source: { kind: 'model', provider: 'p', model: 'm' } } } },
     { type: 'step/end', seq: 7, data: { turn: 1, step: 1 } },

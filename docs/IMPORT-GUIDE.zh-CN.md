@@ -4,7 +4,7 @@
 `path`，以及每个参数一行说明，够发起调用就行。其余内容都写在这里——每个来源的数据放在哪、
 每个参数实际改变什么、重导会怎样——只在真的要导入时才加载。
 
-它已注册为宿主的运行时 skill **`dsh-chat-import-usage`**：`import_chat` 的 schema 里点名它。
+它已注册为宿主的运行时 skill **`dsh-session-migration-usage`**：`import_chat` 的 schema 里点名它。
 同一份内容也是包里的这个文件（`docs/`），所以没有 skills 服务的 Agent 仍然读得到。
 
 ## 用哪个 format，数据在哪

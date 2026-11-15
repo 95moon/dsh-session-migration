@@ -1,24 +1,22 @@
 <div align="center">
 
-<img src="./assets/dci-promo.png" alt="DSH Chat Import" width="100%" />
+<img src="./assets/promo.png" alt="DSH Session Migration" width="100%" />
 
-# DSH Chat Import
+# DSH Session Migration
 
-**A session import plugin built on DeepSeek Harness: import conversation history from other agents with one click, then keep talking in DeepSeek Harness.**
+**A session migration plugin built on DeepSeek Harness: import conversation history from other agents with one click, keep talking in DeepSeek Harness, and export any session back out — to Claude Code, Codex, Kimi or opencode — together with a written handoff and a lossless copy of the full history, so the target tool can carry on.**
 
-> **All sessions, continued in DSH.**
+> **Sessions, moved both ways — and picked up where they left off.**
 
 [![English](https://img.shields.io/badge/lang-English-blue.svg)](README.md) [![简体中文](https://img.shields.io/badge/lang-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-red.svg)](README.zh-CN.md)
 
-[![version](https://img.shields.io/npm/v/dsh-chat-import?style=flat&label=version&color=4D6BFE)](https://www.npmjs.com/package/dsh-chat-import)
-[![downloads](https://img.shields.io/npm/dm/dsh-chat-import?style=flat&label=downloads&color=4D6BFE)](https://www.npmjs.com/package/dsh-chat-import)
-[![GitHub stars](https://img.shields.io/github/stars/Nwflower/dsh-chat-import?style=flat&label=%E2%98%85&color=08C)](https://github.com/Nwflower/dsh-chat-import)
-[![GitCode](https://img.shields.io/badge/GitCode-mirror-4D6BFE?style=flat)](https://gitcode.com/Nwflower/dsh-chat-import)
+[![version](https://img.shields.io/npm/v/dsh-session-migration?style=flat&label=version&color=4D6BFE)](https://www.npmjs.com/package/dsh-session-migration)
+[![GitHub stars](https://img.shields.io/github/stars/95moon/dsh-session-migration?style=flat&label=%E2%98%85&color=08C)](https://github.com/95moon/dsh-session-migration)
 [![license](https://img.shields.io/badge/license-MIT-2EA44F?style=flat)](LICENSE)
-[![Awesome DSH Plugin](https://awesome-dsh-plugin.com/badge.svg)](https://awesome-dsh-plugin.com)
-[![dsh.so install](https://www.dsh.so/badge/install/dsh-chat-import.svg)](https://www.dsh.so/artifact/dsh-chat-import/)
 
 </div>
+
+> Forked from [Nwflower/dsh-chat-import](https://github.com/Nwflower/dsh-chat-import) (MIT). The import pipeline — 37 source formats, discovery, the interchange protocol — is the original author's work and is kept intact. This fork adds the other direction: a session **export** panel, seven output formats, the Codex-native install path, and the handoff-plus-archive model that makes an exported session immediately resumable. Internals are written up in [docs/TECHNICAL.zh-CN.md](docs/TECHNICAL.zh-CN.md) (Chinese).
 
 
 ## Supported Data Sources
@@ -85,7 +83,8 @@
 1. Install from a terminal
 
 ```bash
-dsh plugin --profile web add dsh-chat-import                    # npm package
+dsh plugin --profile web add dsh-session-migration                    # npm package
+dsh plugin --profile web add github:95moon/dsh-session-migration      # or straight from this repository
 ```
 
 2. Or install from the [Plugin Marketplace](https://github.com/dsh-market/dsh-market)
@@ -120,22 +119,72 @@ import_chat({ format: "local-jsonl", path: "D:\downloads\session.jsonl" })
 
 Cursor workspace grouping and imports prefer the local Cursor workspace registry by conversation id, accepting only existing directories. Imports always read fresh; discovery caches successful reads and invalidates on DB/WAL changes. Malformed JSON and filesystem failures are counted in diagnostic warnings. When no usable entry exists, they fall back to decoding the transcript's project directory name.
 
+3. Export a session out
+
+  Open the **Session Migration** entry in the sidebar, switch to the **Export** tab, and tick the sessions you want. Pick a format, optionally set an output directory, then run. Each row reports the file it wrote (with a **Copy path** button) plus a one-line summary of the handoff archive created alongside it. The same work is available without the GUI: `/export [format] [sessionId] [--out <path>]` in the composer, or the `export_chat` tool.
+
+## Export
+
+Any DSH session can be written back out in a format the target tool can open — and, for the agent CLIs, one it can immediately continue from.
+
+| Format | Written to | Notes |
+| --- | --- | --- |
+| `claude` | `~/.claude/projects/<slug>/<uuid>.jsonl` | Resume with `claude --resume <uuid>` |
+| `codex` | `~/.dsh/exports/<session>.rollout.jsonl` | A Codex rollout file: readable history |
+| `codex-native` | Codex library + `~/.codex/sessions/...` | Registers a real Codex thread (SQLite row plus rollout) so the session opens in the Codex desktop app |
+| `kimi` | `~/.dsh/exports/<session>.wire.jsonl` | Kimi CLI wire format |
+| `opencode` | `~/.dsh/exports/<session>.opencode.json` | For `opencode import` |
+| `bundle` | `~/.dsh/exports/<session>.dshbundle.json` | Portable DSH bundle with dual SHA-256; restore with `restore_bundle` |
+| `markdown` | `~/.dsh/exports/<session>.md` | One readable file per session (overwrites) |
+
+Two details decide whether an export is merely readable or actually *resumable*:
+
+- **Tool names are normalized.** Any character outside `[A-Za-z0-9_-]` becomes `_` (runs collapsed, edges trimmed, capped at 64 characters), so one malformed tool name can no longer make the target agent reject the entire history. A real session had `acp tokens=` in it, and Codex answered the whole payload with `Invalid 'response.create' payload: Invalid 'input[287].name': string does not match pattern`.
+- **Tool output is clamped** to 4000 characters per result (head 60%, tail 40%, an explicit marker in between), so a single runaway output cannot swallow the window.
+
+## Handoff and archive
+
+An exported session carries two things: a copy small enough to fit the target's window, and an archive that is not small at all.
+
+**A handoff document, injected as the first message.** It is generated at export time by walking the session's own turns — not read from a file somebody was supposed to have written beforehand, and not produced by an LLM call, so it works offline and costs nothing. Eight sections, always in this order: project goal, work completed, technical decisions, files changed, test and verification, open questions, next steps, history index. A real 8-turn, 175-tool-call session yields about 8 KB of it.
+
+**The recent turns, verbatim.** The last one to three turns keep their full tool traffic, so the incoming agent can see what was just attempted. Earlier turns keep their conversation — prompts and replies — but drop tool arguments and outputs, which is where the bulk of the bytes live.
+
+**A lossless archive of everything else**, under `<project>/.dsh/session-handoff/<session-id>/`:
+
+```
+.dsh/session-handoff/<session-id>/
+  handoff.md          the document injected into the migration copy
+  index.md            table of contents: turn, time, prompt, tool count, archived file
+  original.jsonl      every original event, one JSON per line, untruncated
+  turns/NNN.md        one file per turn: prompt, reply, tool calls, tool output
+  tool-outputs/*.txt  the long tool outputs, split out of the turn files
+  assets/*.png        inline images, written back out as real files
+```
+
+The directory is registered in `.git/info/exclude` — local to the clone, so the project's own `.gitignore` is left untouched.
+
+**The budget.** The migration copy targets about 5% of the target window (46000 characters) and is never allowed past 20% (186000). When the soft target cannot be met — one long turn can exceed the entire budget — the copy falls back to the most conservative settings that still fit the hard cap and reports `fitted: false`, rather than dropping more conversation to hit a number. `original.jsonl` is never clamped.
+
+Measured on a real 8-turn, 1154-event session: the migration copy went from 917 KB (about 255 K tokens — just under a 258400-token window, which is precisely how the "context window is full" reports started) to 86 events / 56 KB, about 6.1% of the window, with all 8 turns of conversation intact.
+
 ## Configuration
 
 To accommodate TUI users, the tools this plugin provides start out injected into context. In Settings you can switch them to **not injected**, or to a partial injection, which saves a fair number of tokens.
 
 Full tool and command usage is in **[docs/USAGE.md](docs/USAGE.md)**.
 
-Third-party plugins can call `scanDiscover()`, `importPath()`, `importAll()`, and `resumeSummary()` on the optional `chatImport` host service. These reuse the same discovery, import, batch-import, and handoff-summary pipelines as the built-in tools and commands. A single-session import result includes `sessionId`. When the service is absent, callers should degrade gracefully.
+Third-party plugins can call `scanDiscover()`, `importPath()`, `importAll()`, and `resumeSummary()` on the optional `sessionMigration` host service. These reuse the same discovery, import, batch-import, and handoff-summary pipelines as the built-in tools and commands. A single-session import result includes `sessionId`. When the service is absent, callers should degrade gracefully.
 
 ## Features
 
 | Capability | Entry Point | Description |
 | --- | --- | --- |
 | Import | Sidebar panel, "Import" tab | Import conversations from other agents, keeping reasoning, tool call results, and system prompts (optional) |
-| Import from file | Panel "Import from file" / `/import auto <path>` | Any local file or directory: three-level detection (explicit format > content marker > parser trial), preview first, an optional search-subfolders prompt for directories, and, when every parser fails, a ready-to-send agent task brief plus a registered `dsh-chat-import-convert` skill |
+| Import from file | Panel "Import from file" / `/import auto <path>` | Any local file or directory: three-level detection (explicit format > content marker > parser trial), preview first, an optional search-subfolders prompt for directories, and, when every parser fails, a ready-to-send agent task brief plus a registered `dsh-session-migration-convert` skill |
 | Retract Import | Sidebar panel, "History" tab | Review import history and delete sessions this plugin created |
-| Export | Context tool | Serialize DSH sessions back into other agents' formats |
+| Export | Sidebar panel, "Export" tab; `/export`; `export_chat` | Seven output formats (Claude Code, Codex file, Codex native install, Kimi, opencode, DSH bundle, Markdown); tool names normalized and tool output clamped so the target agent accepts the payload |
+| Handoff and archive | Automatic on every export | Generates an eight-section handoff document, copies the recent turns verbatim, and writes the untouched full history to `<project>/.dsh/session-handoff/<session-id>/` |
 | Ignore | Automatic, plus `/ignores` | Archiving, deleting, or removing a workspace registers the source, so rescans skip it; `/ignore` and `/unignore` manage the table |
 
 Codex discovery prefers the session title saved in `session_index.jsonl` (`thread_name`), so a rename made in Codex still shows up. Only when no indexed title exists does it fall back to the first real user prompt, extracted the same way import does it, with injected page context excluded. The title index is streamed line by line, and the last valid title record wins for each session.
@@ -157,6 +206,7 @@ On Windows, Hermes discovery scans `%LOCALAPPDATA%\hermes` and `~/.hermes`, fall
 | [Conversion Guide](docs/INTERCHANGE-GUIDE.md) | Agent-facing skill instructions: convert any transcript into an importable interchange v1 document |
 | [Import Guide](docs/IMPORT-GUIDE.md) | Agent-facing skill instructions: the format table, parameter reference, and re-import rules for `import_chat` |
 | [Settings Migration](docs/SETTINGS-MIGRATION.md) | DSH 0.1.5 → 0.1.7 plugin settings-page migration (measured errors, compatibility recipe) |
+| [Technical Notes](docs/TECHNICAL.zh-CN.md) | How the export side, the handoff model, the archive and the Codex-native install actually work (Chinese) |
 | [Changelog](CHANGELOG.md) | Version history |
 | [Roadmap](docs/ROADMAP.md) | Not yet done, planned, and explicitly out of scope |
 | [Contributing](docs/CONTRIBUTING.md) | Development setup, commit rules, security and privacy |
@@ -167,4 +217,4 @@ On Windows, Hermes discovery scans `%LOCALAPPDATA%\hermes` and `~/.hermes`, fall
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/chart?repos=Nwflower/dsh-chat-import&type=date&legend=top-left&sealed_token=sAq09Z4DmwD843pzhg7azZtfXs8zW_Xij3fvCo3Ns1BGAgNeP_Zl1xU9YiUacS74_EzDXKHFpW3Bfj13ClcEMRzAhh4mVrl4a20ijURAGU_Oz6RROQYDYw)](https://www.star-history.com/?type=date&repos=Nwflower%2Fdsh-chat-import)
+[![Star History Chart](https://api.star-history.com/chart?repos=95moon/dsh-session-migration&type=date&legend=top-left&sealed_token=sAq09Z4DmwD843pzhg7azZtfXs8zW_Xij3fvCo3Ns1BGAgNeP_Zl1xU9YiUacS74_EzDXKHFpW3Bfj13ClcEMRzAhh4mVrl4a20ijURAGU_Oz6RROQYDYw)](https://www.star-history.com/?type=date&repos=95moon%2Fdsh-session-migration)

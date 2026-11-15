@@ -46,7 +46,7 @@ test('apply 把两条指南注册为运行时 skill（skills 服务在场时）'
   const skills = []
   const { ctx } = makeCtx({}, { services: { skills: { register(def) { skills.push(def); return () => {} } } } })
   apply(ctx)
-  assert.deepEqual(skills.map((s) => s.name), ['dsh-chat-import-convert', 'dsh-chat-import-usage'])
+  assert.deepEqual(skills.map((s) => s.name), ['dsh-session-migration-convert', 'dsh-session-migration-usage'])
   assert.ok(skills[0].content.includes('"interchange": "dsh-chat-import"'))
   // usage 指南是 import_chat 常驻 schema 的下沉目标：schema 里点名它，正文必须真的在场
   assert.ok(skills[1].content.includes('import_chat'))

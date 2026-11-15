@@ -22,7 +22,7 @@ import { assertEnvelopeHygiene } from './_support/envelope.mjs'
 import { freshDshHome, tempDbPath, openSqliteFixture } from './_support/tmp-db.mjs'
 import { assertSeqContinuity } from './_support/session-invariants.mjs'
 
-// REQ-24 registry 隔离：每个用例独立 DSH_HOME（registry 落盘在 $DSH_HOME/dsh-chat-import）
+// REQ-24 registry 隔离：每个用例独立 DSH_HOME（registry 落盘在 $DSH_HOME/dsh-session-migration）
 beforeEach(() => {
   process.env.DSH_HOME = freshDshHome('dsh-home-')
 })

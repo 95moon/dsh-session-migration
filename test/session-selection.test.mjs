@@ -38,7 +38,7 @@ function traeDb() {
 function makeHost() {
   const { ctx, persistence, registered } = makeCtx({}, { real: true })
   process.env.DSH_HOME = freshDshHome('dsh-home-select-')
-  const registryDir = join(process.env.DSH_HOME, 'dsh-chat-import')
+  const registryDir = join(process.env.DSH_HOME, 'dsh-session-migration')
   mkdirSync(registryDir, { recursive: true })
   registerTools(ctx, registryDir)
   registerPanelRoutes(ctx, ctx.webServer, registryDir)

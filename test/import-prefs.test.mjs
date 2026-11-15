@@ -136,29 +136,35 @@ test('registerImportPrefs: onInjectToolsChange 在注册后初值对账一次（
 
 test('entryIdOf：剥离 0.1.7 loader 的 <kind>: 前缀，拿不到时回退 patch 条目 id', () => {
   // 0.1.7 的 loader 把 ctx.fiber.entry.id 报成 "<kind>:<id>"，设置服务按裸 id 建索引
-  assert.equal(entryIdOf({ fiber: { entry: { id: 'insert:import-claude' } } }), 'import-claude')
-  assert.equal(entryIdOf({ fiber: { entry: { id: 'import-claude' } } }), 'import-claude')
+  assert.equal(entryIdOf({ fiber: { entry: { id: 'insert:session-migration' } } }), 'session-migration')
+  assert.equal(entryIdOf({ fiber: { entry: { id: 'session-migration' } } }), 'session-migration')
   // 取最后一个 ':' 之后：id 自身含冒号也不会被截错
-  assert.equal(entryIdOf({ fiber: { entry: { id: 'include:ui-skin:import-claude' } } }), 'import-claude')
+  assert.equal(entryIdOf({ fiber: { entry: { id: 'include:ui-skin:session-migration' } } }), 'session-migration')
   assert.equal(entryIdOf({}), IMPORT_ENTRY_ID_FALLBACK)
   assert.equal(entryIdOf({ fiber: { entry: {} } }), IMPORT_ENTRY_ID_FALLBACK)
   assert.equal(entryIdOf({ fiber: { entry: { id: '' } } }), IMPORT_ENTRY_ID_FALLBACK)
 })
 
+// 两个标识必须不同：resolvePrefsBinding 用「describe() 名单里有没有裸条目 id」认 forms，老宿主
+// 列出的恰恰是自持命名空间——撞成同一个串就会把 0.1.5 认成 0.1.7，写路径改调不存在的 update。
+test('标识分离：legacy 自持命名空间与条目 id 不能同串', () => {
+  assert.notEqual(IMPORT_SETTINGS_NAMESPACE, IMPORT_ENTRY_ID_FALLBACK)
+})
+
 test('resolvePrefsBinding：describe 名单含裸条目 id → forms（0.1.7）；只有 register/get → legacy（0.1.5）', () => {
   const formsSettings = {
-    describe: () => [{ ns: 'import-claude', value: {}, revision: 3 }],
+    describe: () => [{ ns: 'session-migration', value: {}, revision: 3 }],
     update() {}, configure() {},
   }
-  const formsCtx = { fiber: { entry: { id: 'insert:import-claude' } }, get: (s) => (s === 'settings' ? formsSettings : undefined) }
+  const formsCtx = { fiber: { entry: { id: 'insert:session-migration' } }, get: (s) => (s === 'settings' ? formsSettings : undefined) }
   assert.equal(resolvePrefsBinding(formsCtx).mode, 'forms')
-  assert.equal(resolvePrefsBinding(formsCtx).ns, 'import-claude')
+  assert.equal(resolvePrefsBinding(formsCtx).ns, 'session-migration')
 
   // 旧宿主：describe 名单里只有自持命名空间，且有 register/get → legacy
   const legacySettings = {
     register() {},
     get() {},
-    describe: () => [{ ns: 'chat-import', value: {}, revision: 1 }],
+    describe: () => [{ ns: IMPORT_SETTINGS_NAMESPACE, value: {}, revision: 1 }],
   }
   const legacy = resolvePrefsBinding({ get: (s) => (s === 'settings' ? legacySettings : undefined) })
   assert.equal(legacy.mode, 'legacy')
@@ -171,11 +177,11 @@ test('resolvePrefsBinding：describe 名单含裸条目 id → forms（0.1.7）�
 test('0.1.7 forms：读走 describe、写走 update(裸条目 id)、probe 报 configured', async () => {
   const calls = []
   const settings = {
-    describe: () => [{ ns: 'import-claude', value: { importSystemPrompt: false, injectTools: 'full', sidebarButton: false }, revision: 5 }],
+    describe: () => [{ ns: 'session-migration', value: { importSystemPrompt: false, injectTools: 'full', sidebarButton: false }, revision: 5 }],
     async update(ns, patch, rev) { calls.push({ ns, patch, rev }) },
     configure() {},
   }
-  const ctx = { fiber: { entry: { id: 'insert:import-claude' } }, get: (s) => (s === 'settings' ? settings : undefined) }
+  const ctx = { fiber: { entry: { id: 'insert:session-migration' } }, get: (s) => (s === 'settings' ? settings : undefined) }
   assert.deepEqual(readImportPrefs(ctx), { importSystemPrompt: false, injectTools: 'full', sidebarButton: false })
   const view = describeImportPrefs(ctx)
   assert.equal(view.available, true)
@@ -185,10 +191,10 @@ test('0.1.7 forms：读走 describe、写走 update(裸条目 id)、probe 报 co
   assert.equal(view.probe.hasSettings, true)
   assert.equal(view.probe.hasDescribe, true)
   assert.equal(view.probe.hasRegister, false)
-  assert.ok(view.probe.ns.includes('import-claude'), view.probe.ns)
-  assert.equal(view.probe.namespaceState, 'configured:import-claude')
+  assert.ok(view.probe.ns.includes('session-migration'), view.probe.ns)
+  assert.equal(view.probe.namespaceState, 'configured:session-migration')
   await updateImportPrefs(ctx, { importSystemPrompt: true }, 5)
-  assert.deepEqual(calls, [{ ns: 'import-claude', patch: { importSystemPrompt: true }, rev: 5 }])
+  assert.deepEqual(calls, [{ ns: 'session-migration', patch: { importSystemPrompt: true }, rev: 5 }])
 })
 
 test('0.1.7 forms：registerImportPrefs 声明 auto:false、初值对账一次、document-updated 变化再触发', () => {
@@ -197,11 +203,11 @@ test('0.1.7 forms：registerImportPrefs 声明 auto:false、初值对账一次�
   let current = { importSystemPrompt: true, injectTools: true, sidebarButton: true }
   let updatedListener
   const settings = {
-    describe: () => [{ ns: 'import-claude', value: current, revision: 1 }],
+    describe: () => [{ ns: 'session-migration', value: current, revision: 1 }],
     configure(policy, owner) { configured.push({ policy, owner }) },
     update() {},
   }
-  const fiber = { entry: { id: 'insert:import-claude' } }
+  const fiber = { entry: { id: 'insert:session-migration' } }
   const ctx = {
     fiber,
     get: (s) => (s === 'settings' ? settings : undefined),
@@ -220,7 +226,7 @@ test('0.1.7 forms：registerImportPrefs 声明 auto:false、初值对账一次�
   // 页面策略：本插件自带面板，声明不生成宿主自动页
   assert.deepEqual(configured, [{ policy: { auto: false }, owner: fiber }])
   current = { importSystemPrompt: true, injectTools: 'minimal', sidebarButton: true }
-  updatedListener('import-claude', 2)
+  updatedListener('session-migration', 2)
   assert.deepEqual(events, ['full', 'minimal'])
   // 别的命名空间的事件不触发本插件的对账
   updatedListener('other-plugin', 3)
@@ -239,15 +245,15 @@ test('resolvePrefsBinding：条目未进名单（apply 期 state=1）不缓存 n
   // none。若把 none 也缓存，重启后面板会一直 available:false（probe 却已 configured）。
   let listed = false
   const settings = {
-    describe: () => (listed ? [{ ns: 'import-claude', value: { injectTools: 'full' }, revision: 1 }] : []),
+    describe: () => (listed ? [{ ns: 'session-migration', value: { injectTools: 'full' }, revision: 1 }] : []),
     update() {}, configure() {},
   }
-  const ctx = { fiber: { entry: { id: 'insert:import-claude' } }, get: (s) => (s === 'settings' ? settings : undefined) }
+  const ctx = { fiber: { entry: { id: 'insert:session-migration' } }, get: (s) => (s === 'settings' ? settings : undefined) }
   assert.equal(resolvePrefsBinding(ctx).mode, 'none')
   listed = true
   const later = resolvePrefsBinding(ctx)
   assert.equal(later.mode, 'forms')
-  assert.equal(later.ns, 'import-claude')
+  assert.equal(later.ns, 'session-migration')
 })
 
 test('0.1.7 forms：apply 期 describe 未列出条目时，injectTools 初值仍从插件 config 读（真实宿主回归）', () => {
@@ -255,7 +261,7 @@ test('0.1.7 forms：apply 期 describe 未列出条目时，injectTools 初值�
   // 模拟真实宿主 apply 期：fiber state=1，describe() 跳过本条目（空名单）
   const settings = { describe: () => [], update() {}, configure() { return () => {} } }
   const config = { injectTools: { get: () => true } } // 历史 boolean true → 'full'
-  const fiber = { entry: { id: 'insert:import-claude' } }
+  const fiber = { entry: { id: 'insert:session-migration' } }
   let updatedListener
   const ctx = {
     fiber,
@@ -274,6 +280,6 @@ test('0.1.7 forms：apply 期 describe 未列出条目时，injectTools 初值�
   assert.deepEqual(events, ['full'])
   // config 引用被 loader 原地更新 → 事件触发重读
   config.injectTools = { get: () => 'minimal' }
-  updatedListener('import-claude', 2)
+  updatedListener('session-migration', 2)
   assert.deepEqual(events, ['full', 'minimal'])
 })

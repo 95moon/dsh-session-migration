@@ -80,8 +80,8 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          if npm view "dsh-chat-import@${VERSION}" version > /dev/null 2>&1; then
-            echo "dsh-chat-import@${VERSION} is already on npm; skipping publish"
+          if npm view "dsh-session-migration@${VERSION}" version > /dev/null 2>&1; then
+            echo "dsh-session-migration@${VERSION} is already on npm; skipping publish"
             exit 0
           fi
           publish() {
@@ -95,7 +95,7 @@ jobs:
           if ! publish; then
             # 注册表同步有延迟：publish 已经成功但立刻回查不到时，不能误判后再发一次。
             sleep 20
-            npm view "dsh-chat-import@${VERSION}" version > /dev/null 2>&1
+            npm view "dsh-session-migration@${VERSION}" version > /dev/null 2>&1
           fi
       - name: Create or update the GitHub Release
         if: ${{ github.event_name == 'push' }}

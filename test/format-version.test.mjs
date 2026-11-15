@@ -174,20 +174,20 @@ test('prepareHostEvents：按目标宿主版本分流（默认版本=转换层�
 
 const pluginEnvEvent = () => ({
   type: 'user/message', seq: 0, time: 1, surfaceOp: 'append',
-  data: { id: 'import:x:env', role: 'user', content: [{ type: 'text', text: 'note' }], source: { kind: 'plugin', plugin: 'chat-import' } },
+  data: { id: 'import:x:env', role: 'user', content: [{ type: 'text', text: 'note' }], source: { kind: 'plugin', plugin: 'session-migration' } },
 })
 const pluginHeadEvent = () => ({
   type: 'system/message', seq: 1, time: 1, surfaceOp: 'append',
-  data: { turn: 1, step: 1, message: { id: 'import:x:sys', role: 'system', content: [], source: { kind: 'plugin', plugin: 'chat-import' } } },
+  data: { turn: 1, step: 1, message: { id: 'import:x:sys', role: 'system', content: [], source: { kind: 'plugin', plugin: 'session-migration' } } },
 })
 
 test('V4 源形状：kind="plugin" 改写为生产者自有 kind；V3 保持原样', () => {
   const v4 = prepareHostEvents([pluginEnvEvent(), pluginHeadEvent()], 'import-x', 4)
-  assert.deepEqual(v4[0].data.source, { kind: 'plugin:chat-import' })
-  assert.deepEqual(v4[1].data.message.source, { kind: 'plugin:chat-import' })
+  assert.deepEqual(v4[0].data.source, { kind: 'plugin:session-migration' })
+  assert.deepEqual(v4[1].data.message.source, { kind: 'plugin:session-migration' })
   const v3 = prepareHostEvents([pluginEnvEvent(), pluginHeadEvent()], 'import-x', 3)
-  assert.deepEqual(v3[0].data.source, { kind: 'plugin', plugin: 'chat-import' })
-  assert.deepEqual(v3[1].data.message.source, { kind: 'plugin', plugin: 'chat-import' })
+  assert.deepEqual(v3[0].data.source, { kind: 'plugin', plugin: 'session-migration' })
+  assert.deepEqual(v3[1].data.message.source, { kind: 'plugin', plugin: 'session-migration' })
 })
 
 test('V4 源形状：宿主 system-prompt 生产者在 system 角色上映射为 "system-prompt"', () => {
@@ -211,7 +211,7 @@ test('未知的更高版本（V5）不静默：按已知最高版本产出并大
   try {
     const out = prepareHostEvents([pluginEnvEvent(), pluginHeadEvent()], 'import-x', 5)
     // 形状仍按已知最高版本（V4）：plugin → plugin:<name>
-    assert.deepEqual(out[0].data.source, { kind: 'plugin:chat-import' })
+    assert.deepEqual(out[0].data.source, { kind: 'plugin:session-migration' })
     assert.equal(warnings.filter((w) => w.includes('会话格式版本 5 未知')).length, 1, '应恰好告警一次')
     prepareHostEvents([pluginEnvEvent()], 'import-x', 5)
     assert.equal(warnings.filter((w) => w.includes('会话格式版本 5 未知')).length, 1, '同一版本不重复告警')

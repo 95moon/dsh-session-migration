@@ -1,4 +1,4 @@
-// index.d.ts — dsh-chat-import 类型面（手写维护，随工具 schema 变更同步）
+// index.d.ts — dsh-session-migration 类型面（手写维护，随工具 schema 变更同步）
 //
 // 本包是零构建纯 ESM 插件：index.mjs 只导出 Cordis 插件入口（apply/inject/name/Config）
 // 与少量 host 面辅助函数；工具由 apply 动态注册，不在此模块导出。因此本文件把「工具调用面」
@@ -28,8 +28,8 @@ export interface HostContext {
   inject?(deps: string[], callback?: (ctx: Record<string, unknown>) => void): unknown
 }
 
-/** Public third-party-plugin service registered as `chatImport` by apply(). */
-export interface ChatImportService {
+/** Public third-party-plugin service registered as `sessionMigration` by apply(). */
+export interface SessionMigrationService {
   /** Read-only discovery using the same scanners and cache as scan_discover. */
   scanDiscover(input?: ScanDiscoverParams, signal?: AbortSignal): Promise<ScanDiscoverResult>
   /** Import one path or a supported batch path using the same pipeline as import_chat. */
@@ -423,7 +423,7 @@ export interface ImportMcpParams {
   codexConfigPath?: string
   /** true 时写盘生成片段（默认 false = dry-run）。 */
   apply?: boolean
-  /** apply 时输出路径（默认 $DSH_HOME/dsh-chat-import/mcp-mirror.cordis.yml）。 */
+  /** apply 时输出路径（默认 $DSH_HOME/dsh-session-migration/mcp-mirror.cordis.yml）。 */
   outPath?: string
 }
 

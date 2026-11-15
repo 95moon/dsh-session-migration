@@ -1,7 +1,7 @@
 # Interchange Conversion Guide (skill instructions for agents)
 
 > Audience: an agent, or a script author, tasked with converting an "unrecognized" chat
-> transcript into a format dsh-chat-import can import.
+> transcript into a format dsh-session-migration can import.
 > This document is self-contained: you do not need to read anything else to finish the
 > conversion. The full protocol specification (per-source capability matrix, degradation
 > rules, portable bundle) lives in [INTERCHANGE.md](INTERCHANGE.md). This guide only covers
@@ -53,7 +53,7 @@ write it to a new file, and hand it back to the user for re-import.
 
 | Field | Required | Notes |
 | --- | --- | --- |
-| `interchange` | ✅ | Always `"dsh-chat-import"` (content marker) |
+| `interchange` | ✅ | Always `"dsh-session-migration"` (content marker) |
 | `version` | ✅ | Always `1`; any other value is rejected wholesale with the version named |
 | `meta.id` / `meta.sourceId` | Recommended | Slug source for the session id (the plugin mints the final `import-<slug>`) |
 | `meta.createdAt` | Recommended | Milliseconds; defaults to the import moment |

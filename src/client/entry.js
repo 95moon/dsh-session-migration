@@ -152,7 +152,7 @@
           h("span", null, label)));
     }
 
-    const name = "import-claude";
+    const name = "session-migration";
     // locale 是晚挂载服务（dsh-client-locale 自身依赖 connection/remote），声明进
     // inject 让 apply 期 ctx.get('locale') 就绪（面板 i18n + 字典注册）。sidebarRightTabs
     // 是官方原生右侧栏的 tab 注册服务（dsh ≥ 0.1.5-rc.1 恒有，peerDependencies 已抬
@@ -172,12 +172,12 @@
       // 官方原生右侧栏（@deepseek-ai/dsh-client-ui-sidebar-right，DSH ≥ 0.1.5-rc.1）是硬
       // 依赖：inject 声明 sidebarRightTabs + peerDependencies 抬门槛，apply 期服务必
       // 就绪——无回落链（better-sidebar 集成与自绘 ShellPanel 已随依赖抬升一并删除）。
-      // 注册 tab 类型（id/kind = chat-import，title 供 chip 与 guide 标题）与 guide 胶囊
+      // 注册 tab 类型（id/kind = session-migration，title 供 chip 与 guide 标题）与 guide 胶囊
       //（图标 + 标题 + 描述）；面板主体走 sidebar.right.pane.tab 槽（session 作用域、
       // keyed by 类型 id）。该槽由 ui-sidebar-right 的 rightbar.session 条目声明，晚于
       // 本插件 apply 期 → slots.inject 挂到声明就绪时注册（时序机制，不是回落）。
       const tabs = ctx.get("sidebarRightTabs");
-      const label = () => (localeSvc ? localeSvc.bind(LOCALE_NS)("trigger.label") : (DICT.zh["trigger.label"] || "导入会话"));
+      const label = () => (localeSvc ? localeSvc.bind(LOCALE_NS)("trigger.label") : (DICT.zh["trigger.label"] || "会话迁移"));
       const guideDescription = () => (localeSvc ? localeSvc.bind(LOCALE_NS)("sidebar.guide.description") : (DICT.zh["sidebar.guide.description"] || ""));
       ctx.effect(() => tabs.register({
         id: IMPORT_TAB_TYPE,
@@ -189,7 +189,7 @@
           description: guideDescription,
           icon: ImportGlyph,
         }],
-      }), "dsh-chat-import: 右侧栏 tab 类型注册");
+      }), "dsh-session-migration: 右侧栏 tab 类型注册");
       ctx.slots.inject("sidebar.right.pane.tab", () =>
         ctx.slots.register(
           { name: "sidebar.right.pane.tab", key: IMPORT_TAB_TYPE },
@@ -214,19 +214,19 @@
       // slots.inject 挂起等声明就绪（官方 ui-cordis / dsh-community-market 同款）。
       ctx.slots.inject("sidebar.footer.action", () =>
         ctx.slots.register(
-          { name: "sidebar.footer.action", id: "chat-import", order: 0 },
+          { name: "sidebar.footer.action", id: "session-migration", order: 0 },
           ImportButton,
         ));
       // 落点 Toast 的挂载点：官方 shell.overlay（与宿主自己的 toast 同一个槽，例如
       // ui-plugin-manager 的 plugin-manager.refresh-toast）。惰性 inject：槽被声明才注册。
       ctx.slots.inject("shell.overlay", () =>
         ctx.slots.register(
-          { name: "shell.overlay", id: "chat-import.landing-toast", locale: LOCALE_NS, inject: () => ({}) },
+          { name: "shell.overlay", id: "session-migration.landing-toast", locale: LOCALE_NS, inject: () => ({}) },
           ToastHost,
         ));
       // 设置席位按宿主世代分流（对齐 dsh-claude-style）：
       //   0.1.7+ —— 插件页 plugins.bundle.config（键 = 包名），由 ui-plugin-manager 声明，
-      //             渲染在「设置 → 插件 → dsh-chat-import」；值走客户端 configForms。
+      //             渲染在「设置 → 插件 → dsh-session-migration」；值走客户端 configForms。
       //   旧宿主 —— settings.section 整页（设置页左侧导航「每功能一页」）；值走 fenced
       //             路由 /api-import/prefs。
       // 两个 slots.inject 都是惰性的：槽被声明才触发（旧宿主不声明 plugins.bundle.config，
@@ -235,17 +235,17 @@
       const settingsLabel = () => (localeSvc ? localeSvc.bind(LOCALE_NS)("settings.tab") : (DICT.zh["settings.tab"] || "会话导入"));
       ctx.effect(
         () => registerSettingsNavIcon(settingsLabel),
-        "dsh-chat-import: settings navigation icon",
+        "dsh-session-migration: settings navigation icon",
       );
       ctx.slots.inject("plugins.bundle.config", () =>
         ctx.slots.register(
-          { name: "plugins.bundle.config", key: "dsh-chat-import", label: settingsLabel },
+          { name: "plugins.bundle.config", key: "dsh-session-migration", label: settingsLabel },
           ImportSettingsSection,
         ));
       ctx.slots.inject("settings.section", () => {
         if (hostConfigForms()) return undefined;
         return ctx.slots.register(
-          { name: "settings.section", id: "chat-import", order: 21, label: settingsLabel, locale: LOCALE_NS, inject: () => ({}) },
+          { name: "settings.section", id: "session-migration", order: 21, label: settingsLabel, locale: LOCALE_NS, inject: () => ({}) },
           ImportSettingsSection,
         );
       });

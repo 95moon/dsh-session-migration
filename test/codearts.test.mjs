@@ -23,7 +23,7 @@ import { makeCtx, toolDef } from './_support/fake-host.mjs'
 import { freshDshHome } from './_support/tmp-db.mjs'
 import { clearScanCache } from '../lib/discovery/scan-cache.mjs'
 
-// 集成用例隔离：每个用例独立 DSH_HOME（registry 落盘在 $DSH_HOME/dsh-chat-import），
+// 集成用例隔离：每个用例独立 DSH_HOME（registry 落盘在 $DSH_HOME/dsh-session-migration），
 // 进程内共享的扫描缓存每用例清空。
 beforeEach(() => {
   process.env.DSH_HOME = freshDshHome('dsh-home-')
@@ -219,7 +219,7 @@ test('convertCodeartsJson: synthetic 上下文注入标 plugin 来源且不计�
 
   assert.equal(out.turns.length, 3)
   // 注入轮标 plugin：内容顺序不变，但不作标题回退
-  assert.deepEqual(out.turns[1].promptSource, { kind: 'plugin', plugin: 'chat-import' })
+  assert.deepEqual(out.turns[1].promptSource, { kind: 'plugin', plugin: 'session-migration' })
   assert.equal(out.turns[1].prompt, '## Current Todo List\n\n• [→] 检查本地环境')
   assert.equal(out.turns[2].promptSource, undefined)
   assert.equal(out.injectedPrompts, 1)
@@ -587,7 +587,7 @@ test('import_chat 对缺失 meta.json 的会话照常导入（标题回退首问
     // header 的 cwd 改写为专用导入工作区（会话可见，不伪造源路径）
     const titleEvent = created.events.find((e) => e.type === 'session/title')
     assert.match(titleEvent?.data?.title ?? '', /列出当前目录的文件/)
-    assert.match(String(created.meta.cwd), /dsh-chat-import-workspace/)
+    assert.match(String(created.meta.cwd), /dsh-session-migration-workspace/)
   } finally {
     rmSync(tmp, { recursive: true, force: true })
   }

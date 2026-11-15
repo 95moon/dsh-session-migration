@@ -51,7 +51,7 @@ test('buildMcpPlan/renderMcpPlan: 去重并生成 YAML 片段', () => {
   ])
   assert.equal(rows.length, 2) // 同名不同源保留
   const plan = renderMcpPlan(rows)
-  assert.match(plan, /# dsh-chat-import MCP mirror/)
+  assert.match(plan, /# dsh-session-migration MCP mirror/)
   assert.match(plan, /name: dsh-mcp-client/)
   assert.match(plan, /fs:/)
 })

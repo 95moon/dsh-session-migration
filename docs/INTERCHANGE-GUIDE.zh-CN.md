@@ -1,6 +1,6 @@
 # Interchange 转换指南（给 Agent 的 Skill 指令）
 
-> 读者是要把一份「未识别」的对话记录，转成 dsh-chat-import 能导入的格式的 Agent，或脚本作者。
+> 读者是要把一份「未识别」的对话记录，转成 dsh-session-migration 能导入的格式的 Agent，或脚本作者。
 > 本文是自包含的：完成转换不需要再读别的文档。完整的协议规范（各源能力矩阵、降级规则表、便携
 > bundle）在 [INTERCHANGE.md](INTERCHANGE.md)，本文只讲「怎么把任意格式转进来」。
 > English version: [INTERCHANGE-GUIDE.md](INTERCHANGE-GUIDE.md)
@@ -45,7 +45,7 @@
 
 | 字段 | 必填 | 说明 |
 | --- | --- | --- |
-| `interchange` | ✅ | 恒为 `"dsh-chat-import"`（内容标记） |
+| `interchange` | ✅ | 恒为 `"dsh-session-migration"`（内容标记） |
 | `version` | ✅ | 恒为 `1`；其它值整体拒绝并点名版本 |
 | `meta.id` / `meta.sourceId` | 建议 | 会话 id 的 slug 来源（最终 id 由插件铸成 `import-<slug>`） |
 | `meta.createdAt` | 建议 | 毫秒；缺失时取导入时刻 |

@@ -17,7 +17,7 @@ const clone = (x) => JSON.parse(JSON.stringify(x))
 // protected head：surface 的第一个事件（宿主 v3→v4 的硬不变量，见 docs/architecture.md D9）。
 const headEvent = (seq, turn = 1, step = 1) => ({
   type: 'system/message', seq, time: MS, surfaceOp: 'append',
-  data: { turn, step, message: { id: 'sys' + seq, role: 'system', content: [], source: { kind: 'plugin', plugin: 'chat-import' } } },
+  data: { turn, step, message: { id: 'sys' + seq, role: 'system', content: [], source: { kind: 'plugin', plugin: 'session-migration' } } },
 })
 // 人类 user/message（session/title 的 messageSeqs 只认 source.kind='user' 的这种）。
 const userEvent = (seq) => ({

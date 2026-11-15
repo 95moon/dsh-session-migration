@@ -101,7 +101,7 @@ test('resume-claude 命令：留空 = 最近会话（时间戳降序）；id: �
   process.env.HOME = home
   const commands = []
   const ctx = makeResumeCtx(resumeFixtureTree(home), commands)
-  registerResumeCommands(ctx, join(process.env.DSH_HOME, 'dsh-chat-import'))
+  registerResumeCommands(ctx, join(process.env.DSH_HOME, 'dsh-session-migration'))
   assert.equal(commands.length, 2)
   const resumeClaude = commands.find((c) => c.name === 'resume-claude')
   const resumeCodex = commands.find((c) => c.name === 'resume-codex')
@@ -134,7 +134,7 @@ test('resume-claude 命令：关键词多匹配列候选不猜测；单匹配直
   process.env.HOME = home
   const commands = []
   const ctx = makeResumeCtx(resumeFixtureTree(home), commands)
-  registerResumeCommands(ctx, join(process.env.DSH_HOME, 'dsh-chat-import'))
+  registerResumeCommands(ctx, join(process.env.DSH_HOME, 'dsh-session-migration'))
   const resumeClaude = commands.find((c) => c.name === 'resume-claude')
 
   // 多匹配：「修登录」命中 sess-new / sess-similar-a / sess-similar-b → 列候选不猜测

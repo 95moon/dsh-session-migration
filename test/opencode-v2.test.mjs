@@ -22,7 +22,7 @@ import { hostAbs } from './_support/host-path.mjs'
 import { makeCtx, chatDef } from './_support/fake-host.mjs'
 import { freshDshHome, tempDbPath } from './_support/tmp-db.mjs'
 
-// REQ-24 registry 隔离：每个用例独立 DSH_HOME（registry 落盘在 $DSH_HOME/dsh-chat-import）
+// REQ-24 registry 隔离：每个用例独立 DSH_HOME（registry 落盘在 $DSH_HOME/dsh-session-migration）
 beforeEach(() => {
   process.env.DSH_HOME = freshDshHome('dsh-home-')
 })

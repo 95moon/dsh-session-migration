@@ -1,6 +1,6 @@
 // test/all-import-render.test.mjs — /import-all 的结果文案（lib/command.mjs 的 formatAllImport）
 //
-// 纯函数，直接喂 runChatImportAll 的结果对象：计数取舍、扫描失败的来源点名、逐条失败明细
+// 纯函数，直接喂 runSessionMigrationAll 的结果对象：计数取舍、扫描失败的来源点名、逐条失败明细
 // 的封顶与省略行、以及「什么都没扫到」返回 error 而不是读起来像处理完了。
 
 import { test } from 'node:test'

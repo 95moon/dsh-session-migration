@@ -1,6 +1,6 @@
 # AGENTS.md
 
-`dsh-chat-import` 是 DeepSeek Harness（DSH）插件：把 34 种来源格式（含 DSH 自身的会话日志）的聊天记录导入为可继续的 DSH 会话，支持反向导出。
+`dsh-session-migration` 是 DeepSeek Harness（DSH）插件：把 34 种来源格式（含 DSH 自身的会话日志）的聊天记录导入为可继续的 DSH 会话，支持反向导出。
 
 ## 原则
 
@@ -42,9 +42,9 @@ npm run build          # 发布面自检：client bundle 是否最新、files �
 - `lib/sources/*` 是按来源命名的 host 面适配器，与 `lib/convert/<src>.mjs` 一一对应；SQLite 读取统一经 `sources/sqlite.mjs`。
 - 导入编排分布在几处：`lib/import-core.mjs` 是单会话源与多会话源共用的状态机，`lib/import-state.mjs` 管已知记录与「源未变」短路径，`lib/import-batch.mjs` 管文件收集与批量计数，`lib/import-variants.mjs` 管 chatgpt / grokbuild / hermes / kimi 等特殊形态；registry 在 `lib/imports.mjs`。
 - `lib/discovery.mjs` 是门面，实现放在 `lib/discovery/`：`registry.mjs` 是来源描述符表，其余是按来源族划分的扫描器模块。
-- `lib/tools.mjs` 是门面，负责注册与档位对账，工具定义都在 `lib/tools/`。`import_chat` 的分发器与来源表在 `lib/toolkit.mjs`。工具 schema 只放一次调用需要的东西，长文说明在 `docs/IMPORT-GUIDE.md`，由运行时 skill `dsh-chat-import-usage` 按需加载。
+- `lib/tools.mjs` 是门面，负责注册与档位对账，工具定义都在 `lib/tools/`。`import_chat` 的分发器与来源表在 `lib/toolkit.mjs`。工具 schema 只放一次调用需要的东西，长文说明在 `docs/IMPORT-GUIDE.md`，由运行时 skill `dsh-session-migration-usage` 按需加载。
 - `lib/client.js` 是浏览器面板的 bundle，属生成产物，不要手改。源在 `src/client/`，组装器是 `scripts/build-client.mjs`。
-- `bin/dsh-chat-import.mjs` 是独立 CLI。
+- `bin/dsh-session-migration.mjs` 是独立 CLI。
 - `docs/` 放面向最终用户的文档（含 ROADMAP、CONTRIBUTING）。`test/` 放测试与合成 fixtures，假宿主这类测试共用件在 `test/_support/`，不要在测试文件里另写一份。
 - `dev/`、`node_modules/`、`.dsh-file-claim/` 不入库。
 

@@ -16,7 +16,7 @@ import { detectSecretKinds, parseJsonlLines, SKIPPED_LINES_CAP } from '../lib/co
 import { makeCtx, chatDef } from './_support/fake-host.mjs'
 import { freshDshHome } from './_support/tmp-db.mjs'
 
-// index 层用例的 registry 隔离（registry 落盘在 $DSH_HOME/dsh-chat-import）
+// index 层用例的 registry 隔离（registry 落盘在 $DSH_HOME/dsh-session-migration）
 beforeEach(() => {
   process.env.DSH_HOME = freshDshHome('dsh-home-')
 })

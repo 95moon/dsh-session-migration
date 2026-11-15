@@ -28,7 +28,7 @@ function simpleClaudeJsonl(sessionId) {
 // 创建失败 → attachToWorkspace 触发 REQ-39-lite 回退。
 function makeCtx() {
   const home = mkdtempSync(join(tmpdir(), 'dsh-cmd-'))
-  const registryDir = join(home, 'dsh-chat-import')
+  const registryDir = join(home, 'dsh-session-migration')
   mkdirSync(registryDir, { recursive: true })
   const commands = makeRegistrar()
   const isDir = (p) => { try { return statSync(p).isDirectory() } catch { /* 不存在 → 非目录 */ return false } }
@@ -94,7 +94,7 @@ test('REQ-42 /import claude <path>：单文件导入成功并落盘会话', asyn
   // cwd 不可解析（跨机器路径）→ 落点是专用导入工作区；源文件目录**不**被建成工作区
   // （宿主只接受 cwd 与原工作区路径相等的挂接，源目录回退只会留下空工作区 + 未分组）
   assert.ok(attached.length > 0, '已归组到工作区')
-  assert.ok(attached[0].ws.includes('dsh-chat-import-workspace'),
+  assert.ok(attached[0].ws.includes('dsh-session-migration-workspace'),
     '落点为专用导入工作区: ' + attached[0].ws)
   assert.ok(![...workspaces.keys()].some((p) => p.includes('cmd-src-')),
     '不得为源文件目录建工作区: ' + [...workspaces.keys()].join(','))

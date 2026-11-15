@@ -34,7 +34,7 @@ const claudeAssistant = (content) => line({ sessionId: 's1', type: 'assistant', 
 
 test('previewSample: user / assistant text in order, plugin-injected messages skipped, tool calls folded', () => {
   const events = [
-    { type: 'user/message', time: 1, data: { role: 'user', content: [{ type: 'text', text: 'migration notice' }], source: { kind: 'plugin', plugin: 'chat-import' } } },
+    { type: 'user/message', time: 1, data: { role: 'user', content: [{ type: 'text', text: 'migration notice' }], source: { kind: 'plugin', plugin: 'session-migration' } } },
     { type: 'user/message', time: 2, data: { role: 'user', content: [{ type: 'text', text: 'fix the bug' }] } },
     { type: 'tool/call', time: 3, data: { name: 'Bash' } },
     { type: 'tool/call', time: 4, data: { name: 'Bash' } },

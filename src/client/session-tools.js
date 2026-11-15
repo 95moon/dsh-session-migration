@@ -5,7 +5,7 @@
     // fragments and highlightRanges / highlightTerms inlined from lib/highlight.mjs.
 
     // dataTransfer type of dragged session rows (JSON: [{ source, sourcePath, sessionId, cwd? }])
-    const SESSION_DRAG_MIME = "application/x-dsh-chat-import-sessions";
+    const SESSION_DRAG_MIME = "application/x-dsh-session-migration-sessions";
     // host sidebar workspace rows: data-row-key="workspace:<id>" (class names are hashed by the
     // host build and change between releases; the row key is the stable hook)
     const WORKSPACE_ROW_SELECTOR = '[data-row-key^="workspace:"]';

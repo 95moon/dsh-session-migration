@@ -86,7 +86,7 @@
 ## D9. 导入会话自带空 system head：surface 首事件必须是 system/message（2026-09 定）
 
 - **背景**：宿主 v3→v4 的迁移器把 surface 上的第一个 `system/message` 记为 protected head，此后每一步写系统提示词都以它为替换锚点。如果 surface 里已经有别的 surface 事件、而 head 还没建立，迁移器会 fail-closed 拒载整份日志（`system/message requires a protected first surface head`）。导入会话此前从 `user/message` 开始，宿主续聊、要写自己的系统提示词时就撞上这条规则；由它 seed 出来的续聊会话同样打不开。原生会话不受影响，因为它创建时就写了 head。
-- **决定**：`synthesizeSession` 在首个 `step/start` 之后、任何其他 surface 事件之前写一条 `system/message`，带 `surfaceOp: 'append'`、`content: []`、`source.plugin = 'chat-import'`。位置和内容都对齐宿主自己的 v2→v3 迁移器——它同样在第一个 step/start 处插一条空 head。空内容只占住 surface 的第 0 个节点，真正的系统提示词由宿主在下一步替换或归一化，导入这边不虚构提示词。DSH 源通过 `convert/dsh.mjs` 直接透传事件，不经过 `synthesizeSession`，同样在首个 `step/start` 处补一条空 head——源日志自带的 `system/message` 属运行时头状态，照旧丢弃；同一套 seq 重排里，`session/title.messageSeqs` 也必须和 `sourceEventSeqs` 一样重映射，否则宿主 v3→v4 迁移会以 `title messageSeqs must name an earlier event` 拒载。坐标重映射之后还有一道语义过滤：只保留映射后仍为人类 `user/message`（`source.kind === 'user'`）的引用——只换坐标会把已损坏源日志里指向 `session-reference` 一类注入的坏目标忠实继承下去（宿主报 `must cite distinct earlier human user/message events`），重导导入会话时还会隔代传染；非 user 标题的引用被滤空时丢弃该条标题，标题文本仍由转换结果的 `title` 与末尾 pin 保留。
+- **决定**：`synthesizeSession` 在首个 `step/start` 之后、任何其他 surface 事件之前写一条 `system/message`，带 `surfaceOp: 'append'`、`content: []`、`source.plugin = 'session-migration'`。位置和内容都对齐宿主自己的 v2→v3 迁移器——它同样在第一个 step/start 处插一条空 head。空内容只占住 surface 的第 0 个节点，真正的系统提示词由宿主在下一步替换或归一化，导入这边不虚构提示词。DSH 源通过 `convert/dsh.mjs` 直接透传事件，不经过 `synthesizeSession`，同样在首个 `step/start` 处补一条空 head——源日志自带的 `system/message` 属运行时头状态，照旧丢弃；同一套 seq 重排里，`session/title.messageSeqs` 也必须和 `sourceEventSeqs` 一样重映射，否则宿主 v3→v4 迁移会以 `title messageSeqs must name an earlier event` 拒载。坐标重映射之后还有一道语义过滤：只保留映射后仍为人类 `user/message`（`source.kind === 'user'`）的引用——只换坐标会把已损坏源日志里指向 `session-reference` 一类注入的坏目标忠实继承下去（宿主报 `must cite distinct earlier human user/message events`），重导导入会话时还会隔代传染；非 user 标题的引用被滤空时丢弃该条标题，标题文本仍由转换结果的 `title` 与末尾 pin 保留。
 - **代价**：导入会话多出一条事件（`storedEvents` 基线因此加 1）。首轮没有 step 时，补一个只装 head 的空 step。`SESSION_EVENT_TYPES` 和 surface 集合要加入 `system/message` 与 `developer/message`。`verify_session` 新增 `system-head-missing`（surface 首事件不是 head）与 `title-message-seqs`（标题引用不再指向更早的人类 user/message）来点名存量旧形状——head 必须是 surface 的首事件，旧日志只能 force 重导，没法原地补写。
 - **重审条件**：宿主迁移器改成「缺 head 时自己插入」（v2→v3 就是这种语义）时，这段插桩可以退化为可选。
 
@@ -96,8 +96,8 @@
 ## D10. 设置页双版兼容：0.1.7 按条目 id / 0.1.5 自持命名空间（2026-09 定）
 
 - **背景**：DSH 0.1.7 删掉了 `settings.register()`。命名空间改成了 profile 条目 id，schema 改成了插件导出的 `Config`；0.1.5 及更早则是插件按名字注册。插件以软链或本地 link 装进 profile 时，`@deepseek-ai/schemastery` 未必能从它自己的 require 锚点解析到。0.1.7 的 loader 还把条目 id 报成 `<kind>:<id>`，而设置服务是按裸 id 建索引的——带前缀写会得到 409 `settings-conflict`。
-- **决定**：`lib/import-prefs.mjs` 按宿主能力探测来绑定，一套代码跑两版。`describe()` 的名单里有本插件的**裸条目 id**，就走 `forms`（0.1.7 的路径：按条目 id 走 describe / update，并调 `settings.configure({ auto: false })` 声明自带面板）。只有 `register` / `get`，就走 `legacy`（0.1.5 的路径：自持命名空间 `chat-import`）。两者都没有就是 `none`：读默认值，写入不持久化。`entryIdOf()` 负责剥掉 `<kind>:` 前缀，剥完为空时回退到 patch 里声明的 `import-claude`。schemastery 的解析锚点指向**运行中的 harness bin**，`.volatile()` 也做能力探测。插件入口导出 `Config`。
-- **决定（客户端席位）**：设置界面按同一个世代分流。`ctx.get('configForms')` 在场（0.1.7+）时，注册 `plugins.bundle.config`（键是包名 `dsh-chat-import`，渲染在「设置 → 插件」的插件页），并用 `configForms.get(条目 id)` 逐字段读写。缺席时保留 `settings.section` 整页和 `/api-import/prefs` 这条 fenced 路由。两处是互斥注册的：只要 `configForms` 存在，整页就被否决，避免同一项设置在两个地方各长一份。
+- **决定**：`lib/import-prefs.mjs` 按宿主能力探测来绑定，一套代码跑两版。`describe()` 的名单里有本插件的**裸条目 id**，就走 `forms`（0.1.7 的路径：按条目 id 走 describe / update，并调 `settings.configure({ auto: false })` 声明自带面板）。只有 `register` / `get`，就走 `legacy`（0.1.5 的路径：自持命名空间 `session-migration-prefs`——它必须与条目 id 不是同一个串，否则老宿主列出的自持命名空间会被当成裸条目 id，判据失效）。两者都没有就是 `none`：读默认值，写入不持久化。`entryIdOf()` 负责剥掉 `<kind>:` 前缀，剥完为空时回退到 patch 里声明的 `session-migration`。schemastery 的解析锚点指向**运行中的 harness bin**，`.volatile()` 也做能力探测。插件入口导出 `Config`。
+- **决定（客户端席位）**：设置界面按同一个世代分流。`ctx.get('configForms')` 在场（0.1.7+）时，注册 `plugins.bundle.config`（键是包名 `dsh-session-migration`，渲染在「设置 → 插件」的插件页），并用 `configForms.get(条目 id)` 逐字段读写。缺席时保留 `settings.section` 整页和 `/api-import/prefs` 这条 fenced 路由。两处是互斥注册的：只要 `configForms` 存在，整页就被否决，避免同一项设置在两个地方各长一份。
 - **代价**：两套设置模型都要测试覆盖。`.volatile()` 探测和软链锚点都是宿主实现细节，宿主换版就得重审。完整的踩坑记录与自检方法见 [SETTINGS-MIGRATION.zh-CN.md](SETTINGS-MIGRATION.zh-CN.md)。
 - **重审条件**：0.1.7 及以后成为唯一的支持面时，删掉 legacy 路径和探测，只留 `Config` 加条目 id。
 
@@ -141,7 +141,7 @@
   反向导出保留。`export_chat` 只写**新文件**（新 uuid 加 `createIfAbsent`），绝不碰源文件。随之失效的死代码一并删除：`lib/export/claude.mjs` 的 `tailClaudeEvents`、`serializeClaudeJsonlTail`、`verifyClaudeJsonl`，`serializeCodexJsonlTail`，以及整个 `lib/export/grokbuild.mjs`——它们只服务写回。`lib/export/index.mjs`（也就是 `exports["./export.mjs"]` 子路径）相应收窄了导出名。工具面从 13 个变成 12 个。
 
   registry 里已有的 `writeback` 字段与 `exports` 映射不再有消费者，历史数据原地留着，当作惰性残留，不静默删用户数据。
-- **代价**：原先靠写回把 DSH 里的续聊同步回 Claude Code、Codex、Grok 的用户失去了这个能力。`export_chat` 仍能导出成新文件，但不会再追加回源。`$DSH_HOME/dsh-chat-import/sync.json` 与 `outbound.json` 成了惰性残留文件。`./export.mjs` 子路径的公开导出名变少，这是 0.20.0 的破坏性变更，CHANGELOG 里点名了。
+- **代价**：原先靠写回把 DSH 里的续聊同步回 Claude Code、Codex、Grok 的用户失去了这个能力。`export_chat` 仍能导出成新文件，但不会再追加回源。`$DSH_HOME/dsh-session-migration/sync.json` 与 `outbound.json` 成了惰性残留文件。`./export.mjs` 子路径的公开导出名变少，这是 0.20.0 的破坏性变更，CHANGELOG 里点名了。
 - **重审条件**：写回需求如果重现，应该做成**独立插件**——自带配置、面板和定时器，并自己承担「改写外部工具文件」的风险——而不是把这个能力塞回导入器。本条不因为「用户想要同步」就撤销。
 
 ---
@@ -225,7 +225,7 @@
   本机实测：同一批三条导入里，两条 cwd 为主目录的会话各留下一个空工作区（`…\.claude\projects\C--Users-Nwflower`、`…\.codex\sessions\2026\09\07`，创建时间与导入时间相差 16–22ms）。第三条 cwd 命中了已有工作区，照常归组。
 - **决定**：
   1. 归组前置。`lib/workspace-group.mjs` 在 **create 之前**规划目标工作区，并把目标路径写进会话 header 的 cwd；create 之后再 `attachSession`。同一个 plan 也用于 replace，以及 multi 的每条 create。
-  2. 目标怎么选（`workspaceMode`，默认 `auto`）：cwd 命中已有工作区就沿用；cwd 不是主目录、又能建成工作区，就地建（会话落在真实项目下，与原生会话同区）；否则落到专用导入工作区 `$DSH_HOME/dsh-chat-import-workspace`（`mkdir -p` 后建，cwd 随之改写）。`per-project` 同上，但**不改写 cwd**——宁可「未分组」，也不伪造 cwd。`dedicated` 一律落专用工作区。主目录 cwd 始终不建工作区，因为沙箱 ACL 会拒绝 home 里的 temp / pwsh，这类会话走专用工作区。
+  2. 目标怎么选（`workspaceMode`，默认 `auto`）：cwd 命中已有工作区就沿用；cwd 不是主目录、又能建成工作区，就地建（会话落在真实项目下，与原生会话同区）；否则落到专用导入工作区 `$DSH_HOME/dsh-session-migration-workspace`（`mkdir -p` 后建，cwd 随之改写）。`per-project` 同上，但**不改写 cwd**——宁可「未分组」，也不伪造 cwd。`dedicated` 一律落专用工作区。主目录 cwd 始终不建工作区，因为沙箱 ACL 会拒绝 home 里的 temp / pwsh，这类会话走专用工作区。
   3. 绝不按 transcript 的一面之词建目录。cwd 是不是可用目录，交给宿主的 `create` 判定（`realpath` 加 `isDirectory`）；插件只为自己拥有的专用导入工作区 `mkdir -p`。跨机器的 transcript 因此自然落到专用工作区，既不会在源盘上造目录，也不会把源 transcript 目录当工作区。
   4. 失败要大声。归组结果进公开结果：`workspace`、`workspaceMode`、`workspaceCreated`（新建了工作区，这是用户可见的副作用），以及 `ungrouped` 与 `ungroupedReason`（会话已导入，但停在「未分组」）。`/attach-workspaces` 改为按**会话自己的 cwd** 重新规划，不再回退源目录。header 是 append-only，事后改不了 cwd，所以落不了组的会话如实报告，并提示用 `force` 重导一份。
   5. 附带修掉两处静默。`restore_bundle` 原先自己算 `groupedTo`（声称「回退归组到 bundle 目录」），现在改为照抄真实落点。空工作区清理原先调 `ws.remove()` / `wr.remove()`，而现在的宿主只有 `workspaceRegistry.delete(id)`，等于根本没清理；改为 `delete(id)`，并扩展到旧实现误建的源目录工作区。面板「导入历史」加了「清理空工作区」按钮，只删成员为 0 的工作区登记，目录与会话日志保留。
@@ -238,7 +238,7 @@
 
   DSH 有官方 Toast：`@deepseek-ai/dsh-client-ui-primitives` 的 `Toast`，一个顶部居中的临时横幅。owner 给它 `holdMs` 和 `onDone`，组件 key 一变就重开一条。宿主自己的插件就是这么用的：`dsh-client-ui-plugin-manager` 在自己的 client bundle 里 `require("@deepseek-ai/dsh-client-ui-primitives")`，再把 toast 经 `ctx.slots.inject("shell.overlay", …)` 注册成 `plugin-manager.refresh-toast`。
 - **决定**：
-  1. 新增 `src/client/toast.js` 分片。`ToastHost` 经 `ctx.slots.inject("shell.overlay")` 注册，id 用 `chat-import.landing-toast`，与宿主 toast 同槽。导入成功后弹「导入完成 → <落点>（本次新建该工作区）；另有 N 个未归组」；转投（非 DSH 目标）弹写出的文件路径。落点信息全部取自 D16 的公开结果字段（`workspace`、`workspaceCreated`、`ungrouped`），面板不另算。
+  1. 新增 `src/client/toast.js` 分片。`ToastHost` 经 `ctx.slots.inject("shell.overlay")` 注册，id 用 `session-migration.landing-toast`，与宿主 toast 同槽。导入成功后弹「导入完成 → <落点>（本次新建该工作区）；另有 N 个未归组」；转投（非 DSH 目标）弹写出的文件路径。落点信息全部取自 D16 的公开结果字段（`workspace`、`workspaceCreated`、`ungrouped`），面板不另算。
   2. 这是「客户端只消费注入的 slots / locale / react」的**唯一例外**，而且必须可降级。`require` 包在 `try/catch` 里，拿不到（或者拿到的组件里没有 `Toast`）就渲染一条同位置、同 `holdMs` 的自绘横幅。插件声明支持 dsh ≥ 0.1.5-rc.1，不能因为一句提示就在旧宿主上把整个面板搞挂。这个 require 走 bundle factory 已有的 `require` 通道（`react` 本来就是这么拿的），不引入模块语法，分片仍然禁 import / export。
   3. 触发面只覆盖面板发起的导入（`/api-import/import` 的响应里带落点）。工具与 `/import` 命令的落点写在工具结果文本里（`detailsNote` 的「新建工作区 …」「未归组 …」），不改动它们。
   4. 面板里那条自绘黄条（跳过提示加「忽略警告」按钮）也并进同一条 Toast。官方 `Toast` 支持 `actions`（`[{ label, onClick }]`，宿主自己的「已归档，可撤销」toast 就是这么用的），于是「已跳过 N 条未变化 / 无法安全续写的对话」加「重新导入为新会话」就变成一个带按钮的顶部横幅，`holdMs` 取 15s，给点击留时间。面板里不再有底部浮层。
@@ -297,7 +297,7 @@
   2. **generic 文档成为一等导入格式**（`lib/convert/generic.mjs`，契约见 `INTERCHANGE.md` §5）：INTERCHANGE §1 的 turns 文档带上版本与内容标记即可导入。长尾来源和 skill 路线都落在这里——写一份 JSON 比内置一个转换器便宜，也不必让 LLM 手写 DSH 事件日志（seq、surfaceOp、protected head、V3/V4 形状，任何一项不合，整份日志都会被宿主拒载）。**不选 DSH 会话日志当撰写格式**，因为它是存储格式，不是给人写的格式。
 
      校验按 D4 大声计数：未知块、图片降级、畸形轮步、孤儿结果、非法 usage、0 轮的 skipReason。**工具结果的落点收敛到 `step.toolResults`**：写在 step `content` 里的 `tool-result` 块按 `toolCallId` 派生进结果列表（显式列表优先，与 `tool-call` 块的派生对称）；写在 `promptBlocks` 或结果内层的无处安放，丢弃并计入 `skippedBlocks`。原因是宿主 V4 的 codec 一见到解释性 content 里的 `tool-result` 包装就拒载整份日志（`"released tool-result wrapper"`），正文里不能残留结果块。
-  3. **上传通道**（`lib/upload.mjs` 加三条路由）：init、chunk、complete 三步，按 (sha256, size) 幂等。刷新或断线后从已收字节续传，同一个文件不会重传；整文件指纹校验通过，才产出可导入的路径。配额是单文件 256MiB、暂存总量 2GiB；未完成的上传 24 小时回收；文件名做 sanitize，落点固定在 `$DSH_HOME/dsh-chat-import/uploads/<uuid>/`。暂存件导入后**保留**（D13 的重导语义以它为源键），没有被 registry 引用的件由维护入口清理。
+  3. **上传通道**（`lib/upload.mjs` 加三条路由）：init、chunk、complete 三步，按 (sha256, size) 幂等。刷新或断线后从已收字节续传，同一个文件不会重传；整文件指纹校验通过，才产出可导入的路径。配额是单文件 256MiB、暂存总量 2GiB；未完成的上传 24 小时回收；文件名做 sanitize，落点固定在 `$DSH_HOME/dsh-session-migration/uploads/<uuid>/`。暂存件导入后**保留**（D13 的重导语义以它为源键），没有被 registry 引用的件由维护入口清理。
   4. **一个编排，三个入口**：`lib/file-import.mjs` 同时服务面板的 `/api-import/file`、`/import auto <path>` 和 `local-jsonl` 工具面（`parseFormat` 增补了 `generic`）。预览复用 import-core 的 preview 家族，没有新增状态机；目录批量复用 `importDirectory`；vibe 形态的目录（`messages.jsonl` 加 `meta.json`）交给该来源自己的 `vibeDeriveArgs` 补 meta，不重写第二份映射。
   5. **交互按「不跟宿主抢手势」定形**（2026-10 收口）。面板**不注册拖放**：把会话文件拖到 DSH 窗口，会被宿主当成「给当前对话加附件」，抢过来只会让用户困惑。给文件有两个入口：系统文件框（点「选择…」打开隐藏的 `<input type=\"file\" multiple>`，走上通道）和**路径回车**。
   
@@ -345,10 +345,10 @@
 
   本插件的设置导航遮罩样式表在 `src/client/footer.js`，是 `src/` 里唯一自己建的 `<style>`。它此前没有标记，于是两个方向都会出事：
   - **自己那张**会被下一个物化的包收走。此后它记在别人账上，别人的重载就会把它删掉。
-  - **别人的无标记样式表**会在本插件物化时被认领到 `dsh-chat-import` 名下，本插件重建触发重载时连带被删。2026-10-05 实测就删过 dsh-meme 的两张样式表，表情包界面整份失去样式，只能刷新恢复。
+  - **别人的无标记样式表**会在本插件物化时被认领到 `dsh-session-migration` 名下，本插件重建触发重载时连带被删。2026-10-05 实测就删过 dsh-meme 的两张样式表，表情包界面整份失去样式，只能刷新恢复。
 - **决定**：
-  1. `ensureSettingsNavStyle()` 建标签时写 `data-plugin="dsh-chat-import"`（它等于 `package.json` 的 name，也等于 `lib/client.js` 的模块 entry 名，三者必须同一个值），以及自己的 `data-plugin-css="dsh-chat-import/settings-nav.css"`。既有元素——旧版本留下的无标记元素、上一次 apply 建的那张——按自己的 `data-plugin-css` 或 id 认回来并补上标记，不新建第二张。元素本身不移除：本插件重载时由宿主按包名删掉，紧随其后的 `apply()`（`entry.js` 的 `ctx.effect`）会重建它，不留空窗。
-  2. `parkForeignSheets()` 把「没打标签、又不是自己那张」的 `<style>` 改写成 `dsh-chat-import/foreign-sheet`。这个值不等于任何包名，于是本插件物化时不会认领它们，本插件重载时也不会连带删掉它们。两个时机缺一不可：模块作用域那一次要赶在本插件自己的 `claimStyles` 之前（宿主在工厂返回之后才扫描，这是唯一的窗口）；另外还要一个常驻的 `<head>` 观察者，管本插件之后才出现的那些。
+  1. `ensureSettingsNavStyle()` 建标签时写 `data-plugin="dsh-session-migration"`（它等于 `package.json` 的 name，也等于 `lib/client.js` 的模块 entry 名，三者必须同一个值），以及自己的 `data-plugin-css="dsh-session-migration/settings-nav.css"`。既有元素——旧版本留下的无标记元素、上一次 apply 建的那张——按自己的 `data-plugin-css` 或 id 认回来并补上标记，不新建第二张。元素本身不移除：本插件重载时由宿主按包名删掉，紧随其后的 `apply()`（`entry.js` 的 `ctx.effect`）会重建它，不留空窗。
+  2. `parkForeignSheets()` 把「没打标签、又不是自己那张」的 `<style>` 改写成 `dsh-session-migration/foreign-sheet`。这个值不等于任何包名，于是本插件物化时不会认领它们，本插件重载时也不会连带删掉它们。两个时机缺一不可：模块作用域那一次要赶在本插件自己的 `claimStyles` 之前（宿主在工厂返回之后才扫描，这是唯一的窗口）；另外还要一个常驻的 `<head>` 观察者，管本插件之后才出现的那些。
   3. 契约由 `test/panel-style-ownership.test.mjs` 守住。测试把宿主那两条记账照抄成替身，断言四件事：标记等于包名、也等于 entry 名；本插件那张不被 `style:not([data-plugin])` 命中；宿主按包名删除后重建的那张仍带标记；外来无标记样式表不被认领，本插件重载后它仍在文档里。
 - **代价**：被挪走的样式表此后不再被任何包的记账收走。一个指望宿主替它收走自己那张的插件，会因此留下一份旧副本（本插件只动无标记的那些，宿主官方包自建时就有标记，不受影响）。局限是：在本插件第一次查看文档之前就已经被别人收走的那几张，这条修法够不到。`src/client/` 里如果再出现第二个自建的 `<style>`，必须照第 1 条写标记。
 - **重审条件**：宿主给客户端插件提供样式注入出口（比如 `ctx.styles`）时，删掉自建标签和挪走逻辑。宿主改为按元素引用（而不是属性）记账时，本条整体作废。
@@ -373,18 +373,18 @@
 
 ---
 
-## D24. 对外暴露 `chatImport` Host Service，批量入口只留一份编排（2026-10 定）
+## D24. 对外暴露 `sessionMigration` Host Service，批量入口只留一份编排（2026-10 定）
 
-- **背景**：第三方插件想复用「发现 → 导入 → 批量导入 → 交接摘要」这条链，只能自己拼——工具面要求走模型轮次，命令面只给文本返回值，面板则要发 HTTP。为此新增了 `lib/chat-import-service.mjs`，把已有的编排包成服务注册进 host（`ctx.provide('chatImport', …)`），方法有 `scanDiscover`、`importPath`、`importAll`、`resumeSummary`：单会话结果保留 `sessionId`，批量结果带逐条 `results` 和扫描的 `warnings`。
+- **背景**：第三方插件想复用「发现 → 导入 → 批量导入 → 交接摘要」这条链，只能自己拼——工具面要求走模型轮次，命令面只给文本返回值，面板则要发 HTTP。为此新增了 `lib/session-migration-service.mjs`，把已有的编排包成服务注册进 host（`ctx.provide('sessionMigration', …)`），方法有 `scanDiscover`、`importPath`、`importAll`、`resumeSummary`：单会话结果保留 `sessionId`，批量结果带逐条 `results` 和扫描的 `warnings`。
 
   服务的第一版把批量循环写成了**第二份**，也就是 `/import-all` 命令里那份的副本。两份立刻出现可观测的漂移：命令面不支持 `force`，不返回逐条结果，还把扫描的 `warnings` 整个丢掉了（某个来源扫描抛错时，读出来就是「扫描 0 个会话」）。
 - **决定**：
   1. **服务是发布面，不是新实现**。四个方法一律转投已有的编排：`buildImportExecutor` 与 `importDiscoveryItem`（`lib/toolkit.mjs`）、`runScanDiscover`（`lib/discovery-host.mjs`）、`summarizeClaudeJsonl` 与 `summarizeCodexJsonl`（`lib/handoff.mjs`）。服务自己不含解析、落盘或计数口径。
-  2. **批量编排导出成具名函数 `runChatImportAll(ctx, registryDir, input, signal)`**（在同一个文件里）。`/import-all` 命令与服务方法都调它，命令只负责解析参数和渲染 `formatAllImport` 的文案。**命令不读 `ctx.get('chatImport')`**：服务注册依赖 host 提供 `ctx.provide`，host 没有时服务就不注册；而命令面必须在任何 host 上都能用。共用实现放在模块里，两件事同时满足，也不会留下「服务缺席时另走一份实现」的分支。
-  3. **对外方法的签名就是契约**。`lib/index.d.ts` 声明 `ChatImportService`，以及 `ImportAllParams`、`ImportAllResult`、`ResumeSummaryParams`、`ResumeSummaryResult`。`resumeSummary` 只收 `claude` 与 `codex`——其他来源没有交接摘要语义，而且它**不创建、不打开**新会话。`ctx.provide` 缺失（老 host）时不注册、不抛错，插件照常激活。
+  2. **批量编排导出成具名函数 `runSessionMigrationAll(ctx, registryDir, input, signal)`**（在同一个文件里）。`/import-all` 命令与服务方法都调它，命令只负责解析参数和渲染 `formatAllImport` 的文案。**命令不读 `ctx.get('sessionMigration')`**：服务注册依赖 host 提供 `ctx.provide`，host 没有时服务就不注册；而命令面必须在任何 host 上都能用。共用实现放在模块里，两件事同时满足，也不会留下「服务缺席时另走一份实现」的分支。
+  3. **对外方法的签名就是契约**。`lib/index.d.ts` 声明 `SessionMigrationService`，以及 `ImportAllParams`、`ImportAllResult`、`ResumeSummaryParams`、`ResumeSummaryResult`。`resumeSummary` 只收 `claude` 与 `codex`——其他来源没有交接摘要语义，而且它**不创建、不打开**新会话。`ctx.provide` 缺失（老 host）时不注册、不抛错，插件照常激活。
   4. **命令面不得吞掉服务面已有的信息**。`formatAllImport` 会把扫描失败逐个来源点名，逐条失败列前 5 条并折出省略行。一条也没扫到时，返回 `error` 而不是 `success` 文案。
 - **代价**：
-  - `lib/command.mjs` 多了一条对 `lib/chat-import-service.mjs` 的导入。两者都是 host 面模块，不违反 D3 的纯层边界。
+  - `lib/command.mjs` 多了一条对 `lib/session-migration-service.mjs` 的导入。两者都是 host 面模块，不违反 D3 的纯层边界。
   - 服务是长期对外的 ABI。`ImportAllResult` 的字段名一改就会影响第三方调用方，所以只能加字段，不能改名。
   - `/import-all` 的 `--force` 多了一条「必须带 path」的约束，因为不限定范围的全量重导，会给每个已导入会话都铸一份副本。
 - **重审条件**：宿主提供官方的插件间服务注册或发现机制（取代直接 `ctx.provide`）时，注册那一步改走该机制。服务方法的返回结构如果要收进宿主的类型体系，以那份声明为准，并删掉本仓库的手写类型。

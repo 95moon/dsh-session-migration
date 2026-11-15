@@ -1,6 +1,6 @@
-# Contributing to dsh-chat-import
+# Contributing to dsh-session-migration
 
-Thanks for considering a contribution. `dsh-chat-import` imports conversation
+Thanks for considering a contribution. `dsh-session-migration` imports conversation
 history from other agents into DeepSeek Harness as full-fidelity, resumable
 sessions. The user-facing contract lives in [README.md](../README.md) and its
 Chinese counterpart; the engineering rules — layout, commit discipline, DSH

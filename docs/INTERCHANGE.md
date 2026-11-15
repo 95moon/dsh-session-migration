@@ -1,4 +1,4 @@
-# Interchange v1 —— dsh-chat-import 会话交换协议
+# Interchange v1 —— dsh-session-migration 会话交换协议
 
 > 机器实现见 `lib/convert/interchange.mjs`，里面有 `DEGRADATION_RULES`、`summarizeDegradations` 和 `exportDegradations`。
 

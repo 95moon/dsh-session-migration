@@ -140,9 +140,9 @@ export const Config = supportsVolatile(Schema) ? Schema.object({ /* … */ }) : 
 
 ## 本仓库的落地
 
-`dsh-chat-import` 已经按本文迁移完毕（`lib/import-prefs.mjs` 一套代码跑两版）：
+`dsh-session-migration` 已经按本文迁移完毕（`lib/import-prefs.mjs` 一套代码跑两版）：
 
 - `Config` 从插件入口（`lib/index.mjs`）导出，三个字段都标了 `.volatile()`（0.1.7 只把 volatile 字段投影成可编辑表单）。
-- 命名空间就是裸条目 id。`entryIdOf()` 剥掉 `<kind>:` 前缀，剥完为空就回退到 patch 里声明的 `import-claude`。
-- 绑定探测：`describe()` 的名单里含裸 id，走 `forms`（0.1.7）；只有 `register` / `get`，走 `legacy`（0.1.5，命名空间是 `chat-import`）；两者都没有，就是 `none`（读默认值，写入不持久化）。
+- 命名空间就是裸条目 id。`entryIdOf()` 剥掉 `<kind>:` 前缀，剥完为空就回退到 patch 里声明的 `session-migration`。
+- 绑定探测：`describe()` 的名单里含裸 id，走 `forms`（0.1.7）；只有 `register` / `get`，走 `legacy`（0.1.5，命名空间是 `session-migration`）；两者都没有，就是 `none`（读默认值，写入不持久化）。
 - 面板路由 `/api-import/prefs` 的响应里带 `probe` 自检块。

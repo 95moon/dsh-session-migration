@@ -43,9 +43,9 @@ const landingToast = new Function('t', topLevelFunction('landingToast') + '\nret
 
 test('落点文案：单一工作区 + 本次新建 + 未归组计数', () => {
   const line = landingToast([
-    { status: 'imported', workspace: 'C:\\x\\dsh-chat-import-workspace', workspaceMode: 'dedicated', workspaceCreated: true },
+    { status: 'imported', workspace: 'C:\\x\\dsh-session-migration-workspace', workspaceMode: 'dedicated', workspaceCreated: true },
   ], t)
-  assert.equal(line, '导入完成 → C:\\x\\dsh-chat-import-workspace（本次新建该工作区）')
+  assert.equal(line, '导入完成 → C:\\x\\dsh-session-migration-workspace（本次新建该工作区）')
 })
 
 test('落点文案：多个落点去重、最多列两个并省略', () => {
@@ -81,7 +81,7 @@ test('落点文案：无落点信息（全部幂等跳过 / 失败）时不弹�
 
 test('ToastHost 注册进官方 shell.overlay（与宿主自己的 toast 同一个槽）', () => {
   assert.match(source, /ctx\.slots\.inject\("shell\.overlay"/, 'ToastHost 必须经 slots.inject 挂到 shell.overlay')
-  assert.match(source, /id: "chat-import\.landing-toast"/, 'overlay 条目要带自己的 id')
+  assert.match(source, /id: "session-migration\.landing-toast"/, 'overlay 条目要带自己的 id')
   assert.match(source, /locale: LOCALE_NS/, 'overlay 条目要声明字典命名空间（文案随语言切换）')
 })
 

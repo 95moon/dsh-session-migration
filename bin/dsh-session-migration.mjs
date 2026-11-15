@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// bin/dsh-chat-import.mjs — 独立 CLI（无 DSH host 也可用，只读）
+// bin/dsh-session-migration.mjs — 独立 CLI（无 DSH host 也可用，只读）
 //
 // 子命令：
 //   export-md <session log | session-dir> [--out file]   DSH 会话日志 → Markdown
@@ -38,7 +38,7 @@ async function cmdExportMd(args) {
   const outIdx = args.indexOf('--out')
   const outPath = outIdx >= 0 && args[outIdx + 1] ? args[outIdx + 1] : null
   const source = args.filter((a, i) => !a.startsWith('--') && (outIdx < 0 || i !== outIdx + 1))[0]
-  if (!source) throw new Error('用法：dsh-chat-import export-md <session log | session-dir> [--out file]')
+  if (!source) throw new Error('用法：dsh-session-migration export-md <session log | session-dir> [--out file]')
   const md = sessionJsonlToMarkdown(await readSessionText(source))
   if (outPath) {
     await mkdir(dirname(outPath), { recursive: true })
@@ -55,13 +55,13 @@ async function cmdDoctor() {
     + (out.issues.length ? '\n' + out.issues.map((i) => '  - ' + i).join('\n') : '')
 }
 
-const HELP = `dsh-chat-import — standalone CLI
+const HELP = `dsh-session-migration — standalone CLI
 
 用法：
-  dsh-chat-import export-md <session log | session-dir> [--out file]
+  dsh-session-migration export-md <session log | session-dir> [--out file]
       会话日志可以是 session[.vN].jsonl 或 .zstd 压缩件；给目录时取其中代次最高的日志
-  dsh-chat-import doctor
-  dsh-chat-import help
+  dsh-session-migration doctor
+  dsh-session-migration help
 `
 
 async function main() {

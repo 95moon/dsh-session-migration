@@ -55,6 +55,105 @@
       });
     }
 
+    // 工具（harness）分组头的高度：30px 的头 + 10px 上间距（与 styles.harnessHead 对应）；工作区
+    // 子分组头：24px 的头 + 2px 上间距（与 styles.spaceHead 对应）。固定高度才能用纯算术做列表
+    // 窗口化，见 windowRange。
+    const HARNESS_HEAD_H = 40;
+    const SPACE_HEAD_H = 26;
+
+    // 折叠键的命名空间：工具组用 "h:<工具>"，组内的工作区用 "w:<工具>|<工作区>"——两级各自独立，
+    // 同名工作区出现在两个工具下也不会一起折叠。
+    const harnessKeyToken = (key) => "h:" + key;
+    const spaceKeyToken = (harness, name) => "w:" + harness + "|" + name;
+
+    /** 会话属于哪个工具（harness）：发现出来的 format → 来源 id（claude → claude-code、dsh4 → dsh4
+     *  …）；拿不到 format 的归到「未知工具」。 */
+    function harnessKeyOf(s) {
+      const fmt = s && s.format ? String(s.format) : "";
+      return FORMAT_SOURCE[fmt] || fmt || NO_WORKSPACE_KEY;
+    }
+
+    /** 工具组头的显示名：产品名（Claude / Codex / DSH V4 …），不认识的原样显示。 */
+    const harnessLabel = (key, tr) => (
+      key === NO_WORKSPACE_KEY ? tr("harness.unknown") : (SOURCE_LABELS[key] || key)
+    );
+
+    /** 先按工具（harness）分组、组内再按工作区分组 → [{ key, list, groups, spaces, loose, flat }]。
+     *
+     *  两级头只为「真的分得开」的情况而画，否则列表会变成一层层夹着一行的标题墙（真实数据里
+     *  Codex 的 36 条散在 18 个工作区：1 个装 18 条、其余 17 个各 1 条）。所以：
+     *   · 只有 1 个工作区，或工作区都只有零散一条 → flat：不画工作区头，会话行直接挂在工具组头下；
+     *   · 有 ≥2 个工作区、且有工作区装着 ≥2 条 → 正常两级：这些工作区各画一个次要头，剩下那些
+     *     「只有 1 条」的工作区被合并成组尾的一段无头行（loose），工作区名放进行的 tooltip。
+     *
+     *  工具组按组内最新会话的最后编辑时间降序（最近用过的工具置顶，时间并列按工具名升序稳定），
+     *  组内沿用 groupSessions 的工作区分组规则——只是多了一层，规则本身不重复实现。 */
+    function groupByHarness(sessions) {
+      const out = [];
+      if (!sessions || sessions.length === 0) return out;
+      const byHarness = new Map();
+      for (const s of sessions) {
+        const key = harnessKeyOf(s);
+        if (!byHarness.has(key)) byHarness.set(key, []);
+        byHarness.get(key).push(s);
+      }
+      for (const [key, list] of byHarness) {
+        const groups = groupSessions(list);
+        const spaces = groups.filter((group) => group.list.length > 1);
+        const loose = [];
+        for (const group of groups) {
+          if (group.list.length === 1) loose.push(group.list[0]);
+        }
+        loose.sort(byTimeDesc);
+        // 只有一个工作区、或工作区全都只有一条 → 扁平：这一层没有信息量，不画头
+        const flat = groups.length <= 1 || spaces.length === 0;
+        out.push({ key, list, groups, spaces, loose, flat });
+      }
+      out.sort((a, b) => (groupLatest(b.list) - groupLatest(a.list)) || a.key.localeCompare(b.key));
+      return out;
+    }
+
+    /** 两级分组的纵向布局：把每个工具组、每个工作区子分组换算成「行区顶端在列表里的像素位置」，
+     *  供 windowRange 做窗口切片 → [{ harness, headTop, isCollapsed, flat, space, spaces, loose }]。
+     *  折叠的工具组只占一个组头的高度；折叠的工作区只占一个子分组头的高度；扁平组没有子分组头。 */
+    function layoutHarness(tree, collapsed) {
+      let cursor = 0;
+      const out = [];
+      for (const harness of tree) {
+        const headTop = cursor;
+        cursor += HARNESS_HEAD_H;
+        const token = harnessKeyToken(harness.key);
+        if (collapsed.has(token)) {
+          out.push({ harness, headTop, isCollapsed: true, flat: harness.flat, space: null, spaces: [], loose: null });
+          continue;
+        }
+        if (harness.flat) {
+          // 扁平组：唯一的工作区（如果多于一个工作区，就只按「无工作区」平铺，工作区名行进 tooltip）
+          const only = harness.groups.length === 1
+            ? harness.groups[0]
+            : { name: NO_WORKSPACE_KEY, list: harness.loose };
+          const space = { group: only, rowsTop: cursor, isCollapsed: false };
+          cursor += only.list.length * LIST_ROW_H;
+          out.push({ harness, headTop, isCollapsed: false, flat: true, space, spaces: [], loose: null });
+          continue;
+        }
+        const spaces = [];
+        for (const group of harness.spaces) {
+          cursor += SPACE_HEAD_H;
+          const rowsTop = cursor;
+          const isCollapsed = collapsed.has(spaceKeyToken(harness.key, group.name));
+          spaces.push({ group, rowsTop, isCollapsed });
+          if (!isCollapsed) cursor += group.list.length * LIST_ROW_H;
+        }
+        let loose = null;
+        if (harness.loose.length > 0) {
+          loose = { group: { name: NO_WORKSPACE_KEY, list: harness.loose }, rowsTop: cursor };
+          cursor += harness.loose.length * LIST_ROW_H;
+        }
+        out.push({ harness, headTop, isCollapsed: false, flat: false, space: null, spaces, loose });
+      }
+      return out;
+    }
     /** 一组（count 行、行区顶端在 rowsTop）在视口 win = { top, h } 下的窗口切片：只把可见区间
      *  （上下各多一屏、至少 LIST_OVERSCAN_MIN 行）交给 React，其余用等高占位块撑住——滚动条
      *  长度与分组头 sticky 行为都不变。返回 { first, last, padTop, padBottom }，渲染
@@ -326,7 +425,7 @@
      *  元素树，不再重建（大档位下这是主要开销）。比较字段全是标量，回调由父级 useCallback
      *  固定引用。 */
     const SessionRow = React.memo(function SessionRow(props) {
-      const { s, badgeOverlay, label, time, tip, checked, hot, importing, onToggle, onImport, groupName, terms, hit } = props;
+      const { s, badgeOverlay, label, time, tip, checked, hot, importing, onToggle, onImport, groupName, terms, hit, indent = 0 } = props;
       const style = STYLES;
       const colors = COLORS;
       const lit = hot || checked;
@@ -339,6 +438,8 @@
         ...style.item,
         background: hot ? colors.hover : "transparent",
         cursor: importing ? "default" : "pointer",
+        // 缩进：与组头对齐（item 自身 left padding 6px，所以 6 + indent）
+        ...(indent > 0 ? { paddingLeft: 6 + indent + "px" } : null),
       };
       return h("div", {
         style: rowStyle,
@@ -394,7 +495,8 @@
     }, (a, b) => a.s === b.s && a.checked === b.checked && a.hot === b.hot && a.importing === b.importing
       && a.label === b.label && a.time === b.time && a.tip === b.tip && a.badgeOverlay === b.badgeOverlay
       && a.onToggle === b.onToggle && a.onImport === b.onImport && a.onHot === b.onHot
-      && a.terms === b.terms && a.hit === b.hit && a.hitLabel === b.hitLabel);
+      && a.terms === b.terms && a.hit === b.hit && a.hitLabel === b.hitLabel
+      && a.indent === b.indent);
 
     /** 一个工作区分组：组头（点击折叠 / 展开）+ 窗口化的会话行（区间见 windowRange）。组头与
      *  皮肤一致——悬停（或组内有行点亮：groupLit）时文字变亮并露出折叠箭头，不浮背景矩形
@@ -404,19 +506,34 @@
       const { terms, hits, tools } = props;
       const style = STYLES;
       const group = entry.group;
+      // 作为工具组下的子分组时：折叠键由外层拼（带工具前缀）；indent > 0 时组头换成明显次要的
+      // spaceHead（12px、次要色、无背景、不 sticky、左侧一条竖引导线），会话行也跟着缩进；
+      // hideHead = 该工具下只有一个工作区，这一层被扁平掉（组头由工具组头兼任）。
+      const collapseKey = props.collapseKey || group.name;
+      const indent = props.indent || 0;
+      const hideHead = props.hideHead === true;
+      const headStyle = indent > 0 ? style.spaceHead : style.group;
+      const headLabelStyle = indent > 0 ? style.spaceLabel : style.groupLabel;
+      const headChevronStyle = indent > 0 ? style.spaceChevron : style.groupChevron;
+      const headCountStyle = indent > 0 ? style.spaceCount : style.groupCount;
       const [headHover, setHeadHover] = useState(false);
       const range = isCollapsed ? null : windowRange(group.list.length, entry.rowsTop, win);
       const rows = range === null ? [] : group.list.slice(range.first, range.last).map((s) => {
         const key = itemKey(s);
         const hit = hits ? hits.get(key) || null : null;
+        // 无头分组（扁平的单工作区 / 组尾的零散工作区）没有组头显示工作区名，放进行的 tooltip；
+        // 零散行各自属于不同工作区，所以按行自己的 project 取，不是组名。
+        const rowSpace = group.name !== NO_WORKSPACE_KEY ? group.name : workspaceKey(s);
+        const headlessTip = hideHead && rowSpace !== NO_WORKSPACE_KEY ? "\n" + workspaceLabel(rowSpace, t) : "";
         return h(SessionRow, {
           key,
           s,
           badgeOverlay,
           groupName: group.name,
+          indent,
           label: sourceLabel(s.format),
           time: relTime(s.lastActiveAt || s.createdAt, t) || t("timeUnknown"),
-          tip: sessionTip(s, t) + hitTip(hit, t),
+          tip: sessionTip(s, t) + headlessTip + hitTip(hit, t),
           terms,
           hit,
           hitLabel: hit ? t("search.content.hits", { n: hit.count }) : "",
@@ -444,27 +561,102 @@
       const padBottom = range === null ? 0 : range.padBottom;
       const headHot = headHover || groupLit;
       return h(React.Fragment, null,
-        h("div", {
-          style: { ...style.group, ...(headHot ? { color: COLORS.text } : null) },
-          onClick: () => onCollapse(group.name),
+        hideHead ? null : h("div", {
+          style: { ...headStyle, ...(headHot ? { color: COLORS.text } : null) },
+          onClick: () => onCollapse(collapseKey),
           title: isCollapsed ? t("group.expand") : t("group.collapse"),
           onMouseEnter: () => setHeadHover(true),
           onMouseLeave: () => setHeadHover(false),
         },
-          h("span", { style: style.groupLabel }, workspaceLabel(group.name, t)),
+          h("span", { style: headLabelStyle }, workspaceLabel(group.name, t)),
           h("span", {
             style: {
-              ...style.groupChevron, opacity: headHot ? 1 : 0,
+              ...headChevronStyle, opacity: headHot ? 1 : 0,
               transform: isCollapsed ? "rotate(-90deg)" : "none",
               transition: "opacity .12s ease, transform .15s ease",
             },
           }, h(Icon, { name: "chevronDown", size: 12, strokeWidth: 1.5 })),
-          h("span", { style: style.groupCount }, t("count.sessions", { n: group.list.length }))),
+          h("span", { style: headCountStyle }, t("count.sessions", { n: group.list.length }))),
         padTop > 0 ? h("div", { key: "pad-top", "aria-hidden": true, style: { height: padTop + "px" } }) : null,
         rows,
         padBottom > 0 ? h("div", { key: "pad-bottom", "aria-hidden": true, style: { height: padBottom + "px" } }) : null);
     }
 
+    /** 一个工具（harness）分组：品牌图标 + 工具名 + 总数的组头（点击折叠 / 展开）。
+     *  · flat（该工具下只有一个工作区，或工作区都只有零散一条）：不画工作区子分组头——工作区名
+     *    挂到组头右侧的小字上，会话行直接挂在工具组头下面；
+     *  · 否则往下画缩进一级的工作区子分组头（spaceHead，比工具组头明显次要），再往下才是会话行；
+     *  · 那些「只有 1 条」的工作区不再各占一个头：它们被并在组尾的一段无头行里（loose），
+     *    工作区名放在行的 tooltip 上——避免 18 个「各 1 条」的标题墙。
+     *  即「先按工具区分、再往下展开」。 */
+    function HarnessGroup(props) {
+      const { entry, win, t, onCollapse, importing, selected, badgeOverlay, hotKey, hotGroup, onToggle, onImport, onHot } = props;
+      const { terms, hits, tools } = props;
+      const style = STYLES;
+      const harness = entry.harness;
+      const [headHover, setHeadHover] = useState(false);
+      const only = entry.flat ? entry.space : null;
+      // 扁平时把工作区名挂到组头右侧；「无工作区」是兜底名，写出来只是噪声，不显示
+      const subName = only && only.group.name !== NO_WORKSPACE_KEY ? workspaceLabel(only.group.name, t) : "";
+      const head = h("div", {
+        style: { ...style.harnessHead, ...(headHover ? { color: COLORS.accent } : null) },
+        onClick: () => onCollapse(harnessKeyToken(harness.key)),
+        title: entry.isCollapsed ? t("harness.expand") : t("harness.collapse"),
+        onMouseEnter: () => setHeadHover(true),
+        onMouseLeave: () => setHeadHover(false),
+      },
+        h("span", { style: style.harnessIcon }, h(BrandMark, { id: harness.key, size: 16 })),
+        h("span", { style: style.harnessLabel }, harnessLabel(harness.key, t)),
+        subName ? h("span", { style: style.harnessSub }, subName) : null,
+        h("span", {
+          style: {
+            ...style.harnessChevron, opacity: headHover ? 1 : 0,
+            transform: entry.isCollapsed ? "rotate(-90deg)" : "none",
+            transition: "opacity .12s ease, transform .15s ease",
+          },
+        }, h(Icon, { name: "chevronDown", size: 12, strokeWidth: 1.5 })),
+        h("span", { style: style.harnessCount }, t("count.sessions", { n: harness.list.length })));
+      // 折叠的工具组不渲染子分组（layoutHarness 也不会给它们算高度）
+      if (only) {
+        return h(React.Fragment, null, head, h(SessionGroup, {
+          key: only.group.name,
+          entry: { group: only.group, rowsTop: only.rowsTop },
+          indent: 28,
+          hideHead: true,
+          isCollapsed: false,
+          win, t, importing, selected, badgeOverlay, hotKey,
+          groupLit: hotGroup === only.group.name,
+          onCollapse, onToggle, onImport, onHot,
+          terms, hits, tools,
+        }));
+      }
+      const spaces = entry.spaces.map((space) => h(SessionGroup, {
+        key: space.group.name,
+        entry: { group: space.group, rowsTop: space.rowsTop },
+        collapseKey: spaceKeyToken(harness.key, space.group.name),
+        indent: 16,
+        isCollapsed: space.isCollapsed,
+        win, t, importing, selected, badgeOverlay, hotKey,
+        groupLit: hotGroup === space.group.name,
+        onCollapse, onToggle, onImport, onHot,
+        terms, hits, tools,
+      }));
+      // 组尾的零散工作区：无头，缩进一级，工作区名在行 tooltip 里
+      if (entry.loose) {
+        spaces.push(h(SessionGroup, {
+          key: "loose",
+          entry: { group: entry.loose.group, rowsTop: entry.loose.rowsTop },
+          indent: 16,
+          hideHead: true,
+          isCollapsed: false,
+          win, t, importing, selected, badgeOverlay, hotKey,
+          groupLit: false,
+          onCollapse, onToggle, onImport, onHot,
+          terms, hits, tools,
+        }));
+      }
+      return h(React.Fragment, null, head, spaces);
+    }
     /** 工具栏：全选 / 清空 / 刷新三个动作 + 末位的路径 / 时间两个筛选。
      *  动作按钮的降级判据看「动作按钮组」实测到的可用宽度，而不是面板宽度——筛选芯片也在这条
      *  工具栏上，会按工作区名吃掉宽度，只看面板宽度会让按钮在中间那一段宽度里被压扁 / 折行。
@@ -766,7 +958,7 @@
             ? t("search.content.progress", { scanned: search.scanned, total: search.total, n: displayTotal })
             : t("search.content.done", { n: displayTotal }))
           : t("count.total", { n: displayTotal });
-      const groups = useMemo(() => groupSessions(sessions), [sessions]);
+      const tree = useMemo(() => groupByHarness(sessions), [sessions]);
       // 有来源扫描失败（库被锁 / 无权限 / 读取器异常）：其余来源照常列出，只在列表上方点名，
       // 免得「没扫到」看起来像「没有会话」
       const scanNotice = useMemo(() => scanWarningNotice(warnings, t, sourceLabel), [warnings, t]);
@@ -775,7 +967,7 @@
         () => sessions && sessions.length > 0 && sessions.every((s) => selected.has(itemKey(s))),
         [sessions, selected],
       );
-      const laid = useMemo(() => layoutGroups(groups, collapsed), [groups, collapsed]);
+      const laid = useMemo(() => layoutHarness(tree, collapsed), [tree, collapsed]);
 
       const toggleAll = () => {
         if (!sessions || sessions.length === 0) return;
@@ -868,12 +1060,10 @@
           // 列表容器**恒渲染**（flex:1 撑满剩余高度）：此前 items 为空时整个容器不存在，
           // 底部操作区（结果摘要 + 导入按钮）就会被内容顶到上面去；空列表时它只是没有行。
           !error && h("div", { ref: setListEl, style: style.list },
-            items.length > 0 ? laid.map((entry) => h(SessionGroup, {
-              key: entry.group.name,
+            items.length > 0 ? laid.map((entry) => h(HarnessGroup, {
+              key: entry.harness.key,
               entry, win, t, importing, selected, badgeOverlay,
-              isCollapsed: collapsed.has(entry.group.name),
-              hotKey: hot.key,
-              groupLit: hot.group === entry.group.name,
+              hotKey: hot.key, hotGroup: hot.group,
               onCollapse, onToggle, onImport, onHot,
               terms, hits: contentHits, tools: rowTools.tools,
             })) : null),

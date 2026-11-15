@@ -17,9 +17,9 @@
 
     // 识别失败时指给用户的「Skill」：interchange 转换指南（Agent 用，双语）。URL 按界面
     // 语言走 i18n 键 fileImport.failures.guideUrl（zh → .zh-CN.md，en → .md），不写死常量。
-    const FILE_AREA_COLLAPSED_KEY = "chat-import.fileArea.collapsed";
-    const FILE_AREA_ID = "chat-import-file-area";
-    const FILE_FAILURES_ID = "chat-import-file-failures";
+    const FILE_AREA_COLLAPSED_KEY = "session-migration.fileArea.collapsed";
+    const FILE_AREA_ID = "session-migration-file-area";
+    const FILE_FAILURES_ID = "session-migration-file-failures";
     // 目录批处理的渲染步进：一次最多放 200 行，其余交给「显示更多」（与列表窗口化同思路）
     const FILE_BATCH_PAGE = 200;
     // 分片下限：服务端起始 640KB，413 逐次减半；减到这里仍被拒就报错，不静默丢文件

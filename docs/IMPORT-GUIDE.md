@@ -5,7 +5,7 @@ carries the format enum, the required `path`, and one line per parameter — eno
 call. This guide carries the rest (where each source keeps its data, what each parameter
 actually changes, how re-import behaves), and is loaded only when an import is being prepared.
 
-Registered as the host runtime skill **`dsh-chat-import-usage`**. The `import_chat` schema names
+Registered as the host runtime skill **`dsh-session-migration-usage`**. The `import_chat` schema names
 it; the same content is this file in the package (`docs/`), so an agent without the skills
 service can still read it.
 

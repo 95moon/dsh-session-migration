@@ -246,7 +246,7 @@ test('REQ-21 export_claude 降级报告：拿不到字节的图片块 + 注入�
   await seedSession(persistence, 'sess-img-degrade', { version: 0, id: 'sess-img-degrade', createdAt: 1786000000000, cwd: hostAbs('D:/demo/proj') }, [
     mkEvent('user/message', 0, 1786000000000, { id: 'u1', role: 'user', content: [{ type: 'text', text: '看图' }], source: { kind: 'user' } }, { surfaceOp: 'append' }),
     mkEvent('assistant/message', 1, 1786000000000, { id: 'a1', message: { role: 'assistant', content: [{ type: 'text', text: '这是图' }, { type: 'image', attachment: { attachmentId: 'sha256:gone', mediaType: 'image/png', bytes: 5, width: 1, height: 1 } }] }, source: { kind: 'model', provider: 'dsh' } }, { surfaceOp: 'append' }),
-    mkEvent('user/message', 2, 1786000000000, { id: 'env1', role: 'user', content: [{ type: 'text', text: '注入' }], source: { kind: 'plugin', plugin: 'chat-import' } }, { surfaceOp: 'append' }),
+    mkEvent('user/message', 2, 1786000000000, { id: 'env1', role: 'user', content: [{ type: 'text', text: '注入' }], source: { kind: 'plugin', plugin: 'session-migration' } }, { surfaceOp: 'append' }),
   ])
   apply(ctx)
   const def = exportDef(ctx, 'claude')
@@ -359,7 +359,7 @@ test('REQ-62 跨机器还原：originalCwd 不可达 → cwdAvailable:false + �
   assert.equal(restored.landingHint, 'work')
   // 原 cwd 建不出工作区 → 落点是专用导入工作区（改成 cwd 后挂接成功）。不再声称
   // 「回退归组到 bundle 目录」——那条路在宿主上必然被拒（docs/architecture.md D16）
-  assert.equal(restored.groupedTo, join(process.env.DSH_HOME, 'dsh-chat-import-workspace'))
+  assert.equal(restored.groupedTo, join(process.env.DSH_HOME, 'dsh-session-migration-workspace'))
   assert.match(restored.restoreNote, /原 cwd 不可达/)
   assert.deepEqual(validateJsonSchemaValue(rst.output.schema, restored), [])
   assert.equal(attached.length, 1)

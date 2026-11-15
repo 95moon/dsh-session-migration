@@ -35,7 +35,7 @@ export function tempDbPath(prefix, name) {
 
 /**
  * 每个用例独立的 DSH_HOME（registry / 扫描缓存 / 上传暂存的落点隔离）：
- * `$DSH_HOME/dsh-chat-import`。prefix 只用于调试时辨认来源。
+ * `$DSH_HOME/dsh-session-migration`。prefix 只用于调试时辨认来源。
  */
 export function freshDshHome(prefix = 'dsh-home-') {
   process.env.DSH_HOME = mkdtempSync(join(tmpdir(), prefix))

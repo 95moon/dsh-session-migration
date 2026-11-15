@@ -130,7 +130,7 @@ test('REQ-45 import_reasonix 桌面版：标题走 .titles.json、cwd 走 slug �
   }
   const { ctx, persistence } = makeCtx(tree, { real: false })
   const { registerTools } = await import('../lib/tools.mjs')
-  registerTools(ctx, process.env.DSH_HOME + '\\dsh-chat-import')
+  registerTools(ctx, process.env.DSH_HOME + '\\dsh-session-migration')
   const def = toolDef(ctx, 'import_chat')
   const value = await def.execute({ format: 'reasonix', path: sessDir + '\\abc123.jsonl' })
   assert.equal(value.status, 'imported')

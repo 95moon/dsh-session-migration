@@ -109,11 +109,11 @@ test('convertCodexJsonl: importSystemPrompt 开关收集 developer 为上下文�
   const offPlugin = off.events.filter((e) => e.data && e.data.source && e.data.source.kind === 'plugin')
   assert.equal(offPlugin.length, 1)
   assert.ok(!offPlugin[0].data.content[0].text.includes('You are Codex.'))
-  // 开：developer 作为上下文注入附在环境变更声明之后（source.kind='plugin'，plugin='chat-import'）钉在会话最前（首个 step/start 之后，issue #66）
+  // 开：developer 作为上下文注入附在环境变更声明之后（source.kind='plugin'，plugin='session-migration'）钉在会话最前（首个 step/start 之后，issue #66）
   const on = convertCodexJsonl(raw, { sessionId: 'codex-sp', importSystemPrompt: true })
   const first = on.events.find((e) => e.type === 'user/message')
   assert.equal(first.data.source.kind, 'plugin')
-  assert.equal(first.data.source.plugin, 'chat-import')
+  assert.equal(first.data.source.plugin, 'session-migration')
   assert.ok(first.data.content[0].text.includes('You are Codex.'))
   assert.ok(first.data.content[0].text.includes('DeepSeek Harness'))
   assert.ok(first.seq > on.events.find((e) => e.type === 'step/start').seq)

@@ -109,7 +109,7 @@ jobs:
       - name: Assert plugin row is composed into the tree
         env:
           DSH_HOME: ${{ runner.temp }}/dsh-home
-        run: dsh --profile headless --dump-config | grep -Fq -- import-claude
+        run: dsh --profile headless --dump-config | grep -Fq -- session-migration
       # 真实加载冒烟：完整 boot（含插件激活审计）+ 一次 LLM 回合。
       # DEEPSEEK_API_KEY 用假值、DEEPSEEK_BASE_URL 指向本地 mock（dsh-llm-deepseek
       # 每请求读该 env），无真实凭据、无外网依赖、结果确定。

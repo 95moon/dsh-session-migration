@@ -79,7 +79,7 @@ test('convertChatgptJson: importSystemPrompt 开关收集 system 角色为上下
   const c1 = on.conversations[0]
   const first = c1.events.find((e) => e.type === 'user/message')
   assert.equal(first.data.source.kind, 'plugin')
-  assert.equal(first.data.source.plugin, 'chat-import')
+  assert.equal(first.data.source.plugin, 'session-migration')
   assert.ok(first.data.content[0].text.includes('You are a helpful assistant.'))
   assert.ok(first.seq > c1.events.find((e) => e.type === 'step/start').seq)
 })

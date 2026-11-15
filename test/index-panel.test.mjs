@@ -365,7 +365,7 @@ test('REQ-41 /api-import/prefs：settings 缺席回退默认；在场时读/写�
     register(ns, schema) { return { ns, schema } },
     describe(opts) {
       assert.equal(opts.redactSecrets, true)
-      return [{ ns: 'chat-import', value: { importSystemPrompt: false, injectTools: true }, revision: 7 }]
+      return [{ ns: 'session-migration', value: { importSystemPrompt: false, injectTools: true }, revision: 7 }]
     },
     async update(ns, patch, expectedRevision) { calls.push({ ns, patch, expectedRevision }) },
     get(_ns) { return { importSystemPrompt: false, injectTools: true } },
@@ -380,28 +380,28 @@ test('REQ-41 /api-import/prefs：settings 缺席回退默认；在场时读/写�
   assert.deepEqual(r.data.value, { importSystemPrompt: false, injectTools: true })
   const w = await invoke(route2, { importSystemPrompt: true, revision: 7 })
   assert.equal(w.data.ok, true)
-  assert.deepEqual(calls, [{ ns: 'chat-import', patch: { importSystemPrompt: true }, expectedRevision: 7 }])
+  assert.deepEqual(calls, [{ ns: 'session-migration', patch: { importSystemPrompt: true }, expectedRevision: 7 }])
   // injectTools 写入同样走 fenced 路由（第二个开关共用同一偏好命名空间）
   const w2 = await invoke(route2, { injectTools: false, revision: 7 })
   assert.equal(w2.data.ok, true)
   assert.deepEqual(calls, [
-    { ns: 'chat-import', patch: { importSystemPrompt: true }, expectedRevision: 7 },
-    { ns: 'chat-import', patch: { injectTools: false }, expectedRevision: 7 },
+    { ns: 'session-migration', patch: { importSystemPrompt: true }, expectedRevision: 7 },
+    { ns: 'session-migration', patch: { injectTools: false }, expectedRevision: 7 },
   ])
   // sidebarButton 写入同样走 fenced 路由（第三个开关共用同一偏好命名空间）
   const w3 = await invoke(route2, { sidebarButton: false, revision: 7 })
   assert.equal(w3.data.ok, true)
   assert.deepEqual(calls, [
-    { ns: 'chat-import', patch: { importSystemPrompt: true }, expectedRevision: 7 },
-    { ns: 'chat-import', patch: { injectTools: false }, expectedRevision: 7 },
-    { ns: 'chat-import', patch: { sidebarButton: false }, expectedRevision: 7 },
+    { ns: 'session-migration', patch: { importSystemPrompt: true }, expectedRevision: 7 },
+    { ns: 'session-migration', patch: { injectTools: false }, expectedRevision: 7 },
+    { ns: 'session-migration', patch: { sidebarButton: false }, expectedRevision: 7 },
   ])
 
   // update 抛冲突 → ok:false + code: settings-conflict（客户端据此重读）
   const conflictStub = {
     ...settingsStub,
     async update() {
-      const e = new Error('settings namespace "chat-import" changed since it was read (expected 7, now 8)')
+      const e = new Error('settings namespace "session-migration" changed since it was read (expected 7, now 8)')
       e.name = 'SettingsConflictError'
       throw e
     },

@@ -23,7 +23,7 @@ function codexRollout() {
 // 真实 node:fs 包装的 ctx（discovery host 读真实临时目录）；listeners 收集 ctx.on 注册的处理器。
 function makeCtx() {
   const home = mkdtempSync(join(tmpdir(), 'dsh-hint-'))
-  const registryDir = join(home, 'dsh-chat-import')
+  const registryDir = join(home, 'dsh-session-migration')
   const host = makeHostCtx(null, { real: true })
   return { ctx: host.ctx, registryDir, sessions: host.persistence.sessions, listeners: host.listeners }
 }
@@ -57,7 +57,7 @@ test('REQ-53 迁移提示：cwd 有可导入历史 → 注入提示并记记忆'
   await fireSessionStart(env, cwd, (def) => contexts.push(def))
 
   assert.equal(contexts.length, 1, '应注册一条 PromptContext')
-  assert.equal(contexts[0].name, 'chat-import-migration-hint')
+  assert.equal(contexts[0].name, 'session-migration-migration-hint')
   assert.ok(contexts[0].text.includes('可导入'), '提示含可导入计数: ' + contexts[0].text)
   assert.ok(contexts[0].text.includes('/import'), '提示指引命令: ' + contexts[0].text)
   // per-project 记忆落盘：hints.json 记 cwd

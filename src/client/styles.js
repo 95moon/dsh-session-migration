@@ -175,6 +175,32 @@
       groupLabel: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", transition: "color .12s ease" },
       groupChevron: { display: "inline-flex", alignItems: "center", justifyContent: "center", flex: "none", width: "14px", height: "14px" },
       groupCount: { marginLeft: "auto", fontSize: "11px", fontWeight: 400, color: C.dimmer },
+      // 一级：工具（harness）分组头——品牌图标 + 产品名，10px 上间距、30px 高，sticky（滚过时压
+      // 在下级头上面）、字重 600、正文色：它是列表里唯一的「大标题」，必须一眼看出比下面高一级
+      harnessHead: {
+        display: "flex", alignItems: "center", gap: "6px", height: "30px", minHeight: "30px",
+        padding: "0 6px", marginTop: "10px", borderRadius: "6px",
+        fontSize: "13px", lineHeight: "18px", fontWeight: 600, color: C.text,
+        position: "sticky", top: 0, background: C.surface, zIndex: 2, cursor: "pointer",
+        transition: "color .12s ease",
+      },
+      harnessIcon: { display: "inline-flex", alignItems: "center", justifyContent: "center", flex: "none", width: "16px", height: "16px" },
+      harnessLabel: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+      // 扁平（单工作区）时工作区名挂在工具组头右侧：小一号、次要色，不当标题用
+      harnessSub: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "11px", fontWeight: 400, color: C.dimmer, marginLeft: "2px" },
+      harnessChevron: { display: "inline-flex", alignItems: "center", justifyContent: "center", flex: "none", width: "14px", height: "14px" },
+      harnessCount: { marginLeft: "auto", fontSize: "11px", fontWeight: 400, color: C.dimmer },
+      // 二级：工具组内的工作区子分组头——比一级明显次要：12px、次要色、无背景、不 sticky
+      // （sticky 只留给一级，两级都吸顶会互相盖住），左边一条竖引导线把「从属」画出来
+      spaceHead: {
+        display: "flex", alignItems: "center", gap: "4px", height: "24px", minHeight: "24px",
+        padding: "0 6px 0 14px", marginTop: "2px", borderLeft: "2px solid " + C.border,
+        fontSize: "12px", lineHeight: "16px", fontWeight: 500, color: C.dimmer,
+        position: "relative", zIndex: 0, cursor: "pointer", transition: "color .12s ease",
+      },
+      spaceLabel: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+      spaceChevron: { display: "inline-flex", alignItems: "center", justifyContent: "center", flex: "none", width: "12px", height: "12px" },
+      spaceCount: { marginLeft: "auto", fontSize: "11px", fontWeight: 400, color: C.dimmer },
       // 会话行（对标皮肤会话行）：28px 高、0 6px 内边距、6px 圆角、行距 1px
       item: {
         display: "flex", alignItems: "center", height: "28px", minHeight: "28px",

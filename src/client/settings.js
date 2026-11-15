@@ -1,6 +1,6 @@
     // 设置页「会话导入」分区。席位按宿主世代分流（对齐 dsh-claude-style）：
     //   0.1.7+ —— 插件设置搬到「设置 → 插件」的插件页（plugins.bundle.config 槽，
-    //             键 = 包名 dsh-chat-import），值走客户端服务 configForms（命名空间 =
+    //             键 = 包名 dsh-session-migration），值走客户端服务 configForms（命名空间 =
     //             本插件 profile 条目 id，控制器带值 + 写队列 + revision 栅栏）。
     //   旧宿主 —— settings.section 整页（设置页左侧导航「每功能一页」），值走宿主
     //             半边自建的 fenced 路由 /api-import/prefs（旧宿主 configForms 缺席，
@@ -32,11 +32,11 @@
           return colon === -1 ? id : id.slice(colon + 1);
         }
       } catch (_) { /* 无条目（动态包 façade 不暴露 fiber）：回落 */ }
-      return "import-claude";
+      return "session-migration";
     }
     // 本插件命名空间的候选：客户端条目 id、包名、patch 声明的裸条目 id（宿主半边用的
     // 就是最后这个）。宿主设置服务里只有一个是我们，挑出真正被服务的那一个。
-    const SETTINGS_NAMESPACE_CANDIDATES = () => [settingsEntryId(), "dsh-chat-import", "import-claude"];
+    const SETTINGS_NAMESPACE_CANDIDATES = () => [settingsEntryId(), "dsh-session-migration", "session-migration"];
     function servedNamespace(forms, candidates) {
       try {
         const mirror = typeof forms.describe === "function" ? forms.describe() : null;
@@ -55,7 +55,7 @@
       const forms = hostConfigForms();
       if (!forms) return null;
       const candidates = SETTINGS_NAMESPACE_CANDIDATES();
-      const ns = servedNamespace(forms, candidates) || "import-claude";
+      const ns = servedNamespace(forms, candidates) || "session-migration";
       try {
         const form = forms.get(ns);
         return form && typeof form.getSnapshot === "function" ? form : null;

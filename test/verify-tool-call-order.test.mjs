@@ -16,7 +16,7 @@ const SESSION_ID = 's'
 // protected head：surface 的第一个事件（宿主 v3→v4 的硬不变量）。
 const headEvent = (seq) => ({
   type: 'system/message', seq, time: MS, surfaceOp: 'append',
-  data: { turn: 1, step: 1, message: { id: 'sys' + seq, role: 'system', content: [], source: { kind: 'plugin', plugin: 'chat-import' } } },
+  data: { turn: 1, step: 1, message: { id: 'sys' + seq, role: 'system', content: [], source: { kind: 'plugin', plugin: 'session-migration' } } },
 })
 
 const assistantEvent = (seq, index, content) => ({

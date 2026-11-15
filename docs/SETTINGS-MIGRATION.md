@@ -148,9 +148,9 @@ page, do not generate a host page". That call returns a disposer, so register it
 
 ## How this repository applies it
 
-`dsh-chat-import` has been migrated this way, with one codebase in `lib/import-prefs.mjs`:
+`dsh-session-migration` has been migrated this way, with one codebase in `lib/import-prefs.mjs`:
 
 - `Config` is exported from the plugin entry (`lib/index.mjs`) with all three fields marked `.volatile()`. 0.1.7 only projects volatile fields into editable forms.
-- The namespace is the bare entry id. `entryIdOf()` strips the `<kind>:` prefix and falls back to the patch-declared `import-claude`.
-- Binding detection: if the `describe()` list contains the bare id, use `forms` (0.1.7); if only `register` and `get` exist, use `legacy` (0.1.5, namespace `chat-import`); if neither exists, use `none` (read defaults, writes are not persisted).
+- The namespace is the bare entry id. `entryIdOf()` strips the `<kind>:` prefix and falls back to the patch-declared `session-migration`.
+- Binding detection: if the `describe()` list contains the bare id, use `forms` (0.1.7); if only `register` and `get` exist, use `legacy` (0.1.5, namespace `session-migration`); if neither exists, use `none` (read defaults, writes are not persisted).
 - The panel route `/api-import/prefs` returns a `probe` self-check block.

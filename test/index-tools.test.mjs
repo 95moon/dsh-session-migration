@@ -228,8 +228,8 @@ test('REQ-39 沙箱防护：transcript cwd = 主目录 → 落入专用导入工
   // 主目录被显式跳过（沙箱 ACL 会拒绝 home 里的 temp/pwsh），落点是专用导入工作区；
   // 源文件目录**不**再被建成工作区（旧回退在宿主上必然被拒，只会留下空工作区）
   assert.equal(attached.length, 1)
-  assert.equal(attached[0].ws, join(process.env.DSH_HOME, 'dsh-chat-import-workspace'))
-  assert.equal(value.workspace, join(process.env.DSH_HOME, 'dsh-chat-import-workspace'))
+  assert.equal(attached[0].ws, join(process.env.DSH_HOME, 'dsh-session-migration-workspace'))
+  assert.equal(value.workspace, join(process.env.DSH_HOME, 'dsh-session-migration-workspace'))
   assert.equal(value.ungrouped, undefined, '已归组 → 不占 ungrouped 键')
 })
 

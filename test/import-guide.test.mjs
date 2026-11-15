@@ -3,7 +3,7 @@
 // 背景：工具 schema 是每轮对话都要付的常驻成本（宿主的 provider 层只把 name / description /
 // parameters 发给模型，见 dsh-llm-deepseek 与 dsh-llm 的 toolDeclarations；output.schema 不上线，
 // 所以只有这三项算钱）。29 个来源的 path 形状表、参数长文与重导细则因此下沉到
-// docs/IMPORT-GUIDE.md，由运行时 skill dsh-chat-import-usage 按需加载。
+// docs/IMPORT-GUIDE.md，由运行时 skill dsh-session-migration-usage 按需加载。
 //
 // 下沉的风险是「搬走了但没搬全」和「指南与代码各写一份」，两条都在这里拦住；
 // 常驻成本本身的上限护栏在 test/tools-injection.test.mjs（同口径只留一份）。

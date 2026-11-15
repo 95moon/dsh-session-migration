@@ -5,7 +5,7 @@ import { buildConvertSkill, registerConvertSkill, CONVERT_SKILL_NAME } from '../
 
 test('buildConvertSkill：指南内容组装成运行时 skill 定义', () => {
   const def = buildConvertSkill('# Guide\n…')
-  assert.equal(def.name, 'dsh-chat-import-convert')
+  assert.equal(def.name, 'dsh-session-migration-convert')
   assert.equal(def.source, 'runtime')
   assert.equal(def.content, '# Guide\n…')
   // resourceBase 指到包内 docs/：指南里的相对链接（INTERCHANGE.md、中文版）按目录解析
