@@ -5,9 +5,12 @@
     const workspaceLabel = (key, tr) => (key === NO_WORKSPACE_KEY ? tr("noWorkspace") : key);
     const DICT = {
       zh: {
-        "trigger.title": "在 DSH 与其他工具之间迁移会话（发现 + 导入/导出）",
         "trigger.label": "会话迁移",
         "sidebar.guide.description": "从 Claude Code / Codex / ChatGPT 等 25+ 工具导入会话并续聊，也能把 DSH 会话反向导出",
+        // 主区整页（侧栏图标列表点进来落地的那一页）的标题栏文案
+        "panel.description": "把外部工具的对话导入 DeepSeek Harness 续聊，或把 DSH 会话连同交接书导出回 Claude Code / Codex / Kimi / opencode。",
+        "panel.openSidebar": "在右侧栏打开",
+        "panel.openSidebar.title": "在右侧栏打开同一面板：导入时不必离开当前对话",
         "allSources": "全部来源",
         // DSH 两代的完整展示名（来源下拉用；会话行提示用 SOURCE_LABELS 的中性短名）
         "source.dsh": "DSH V3 会话格式",
@@ -207,7 +210,7 @@
         "settings.injectTools.minimal": "精简",
         "settings.injectTools.full": "全量",
         "settings.sidebarButton.title": "侧边栏入口",
-        "settings.sidebarButton.description": "在左侧栏底部显示「会话迁移」快捷按钮；关闭后不在侧边栏显示，仍可通过右侧栏打开。",
+        "settings.sidebarButton.description": "在左侧栏的图标列表里显示「会话迁移」入口（与插件、自动化任务同一列）；关闭后入口隐藏，面板仍可从右侧栏打开。",
         "settings.tab": "会话导入",
         // ── 从文件导入（ImportTabContent 导入子视图顶部的折叠区）────────────
         "fileImport.title": "从文件导入",
@@ -322,9 +325,11 @@
         "drop.done": "已导入到 {name}",
       },
       en: {
-        "trigger.title": "Move sessions between DSH and other tools (discover + import/export)",
         "trigger.label": "Session Migration",
         "sidebar.guide.description": "Import and resume sessions from Claude Code, Codex, ChatGPT and 25+ tools, and export DSH sessions back out",
+        "panel.description": "Bring conversations from other tools into DeepSeek Harness, or export a DSH session (with its handoff) back to Claude Code, Codex, Kimi or opencode.",
+        "panel.openSidebar": "Open in side panel",
+        "panel.openSidebar.title": "Open the same panel beside the conversation, so importing never takes you away from it",
         "allSources": "All sources",
         "source.dsh": "DSH V3 session format",
         "source.dsh4": "DSH V4 session format",
@@ -516,7 +521,7 @@
         "settings.injectTools.minimal": "Minimal",
         "settings.injectTools.full": "Full",
         "settings.sidebarButton.title": "Sidebar Entry",
-        "settings.sidebarButton.description": "Show the 'Session Migration' quick button at the bottom of the left sidebar; when disabled, the button is hidden from the sidebar and remains accessible via the right sidebar.",
+        "settings.sidebarButton.description": "Show the 'Session Migration' entry in the left sidebar's icon list, next to Plugins and Scheduled tasks; when disabled, the entry is hidden and the panel stays reachable from the right sidebar.",
         "settings.tab": "Session Import",
         "fileImport.title": "Import from file",
         "fileImport.expand": "Expand the file import area",

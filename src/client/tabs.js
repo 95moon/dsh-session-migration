@@ -337,22 +337,34 @@
           && h("div", { style: { flexShrink: 0, padding: "0 12px 8px", fontSize: "12px", color: colors.error } }, error));
     }
 
-    function ImportTabContent() {
+    function ImportTabContent(props) {
       const t = useTranslate();
       const colors = COLORS;
+      // page 形态给主区整页用（panel-page.js）：标签按内容宽度排、不三等分撑满整行——
+      // 右侧栏只有 380px 上下，三等分是对的；整页 1000px 宽时三等分会让每个标签有
+      // 300px 的空旷点击区。
+      const page = !!(props && props.page);
       const [tab, setTab] = useState("import");
       const tabBtn = (id, label) => h("button", {
         type: "button",
         onClick: () => setTab(id),
         style: {
-          flex: "1", padding: "8px 0", border: "none", cursor: "pointer", fontSize: "13px", fontWeight: 600,
+          flex: page ? "0 0 auto" : "1",
+          padding: page ? "7px 14px" : "8px 0",
+          border: "none", cursor: "pointer", fontSize: "13px", fontWeight: 600,
           background: tab === id ? colors.field : "transparent",
           color: tab === id ? colors.text : colors.dim,
+          borderRadius: page ? "8px 8px 0 0" : undefined,
           borderBottom: tab === id ? "2px solid " + colors.accent : "2px solid transparent",
         },
       }, label);
       return h(React.Fragment, null,
-        h("div", { style: { display: "flex", flexShrink: 0, borderBottom: "1px solid " + colors.border } },
+        h("div", {
+          style: {
+            display: "flex", flexShrink: 0, borderBottom: "1px solid " + colors.border,
+            gap: page ? "2px" : undefined,
+          },
+        },
           tabBtn("import", t("tab.import")),
           tabBtn("export", t("tab.export")),
           tabBtn("history", t("tab.history"))),

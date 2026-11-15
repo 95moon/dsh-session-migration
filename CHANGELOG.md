@@ -2,6 +2,50 @@
 
 All notable changes to `dsh-session-migration` are documented here, newest first.
 
+## [0.27.1] - 2026-11-16
+
+[中文](#cn-0.27.1) | [English](#en-0.27.1)
+
+<h3 id="cn-0.27.1">新增功能</h3>
+
+- 入口搬到左侧栏的**图标列表**（`sidebar.panellist`）：和「插件」「自动化任务」「上下文洞察」同一列，order 15（自动化任务之后、上下文洞察之前）。点开的不是右侧抽屉，而是主区整页（`main` 槽的同名 key）：页头是插件徽标 + 标题 + 一行说明，右上角「在右侧栏打开」，下面是「发现 / 导入 / 导出」三个子页。
+- 入口图标是新的品牌图（圆角方框内两支相向箭头），由注册的组件按 `ownerProps { size, active }` 自己画，选中态取强调色。
+
+<h3 id="cn-0.27.1">体验优化</h3>
+
+- 三个子页在整页形态下改成自适应宽度（标签按钮不再三等分拉满，内容列限宽 1040px 居中），右侧栏形态保持原样。
+- 设置项 `sidebarButton` 的说明改写为「左侧栏图标列表里的入口」，关掉后图标消失、面板仍可从右侧栏打开。
+
+<h3 id="cn-0.27.1">问题修复</h3>
+
+- 删掉字典里已无引用的 `trigger.title`（原本只作 footer 按钮的 tooltip），避免死键。
+
+<h3 id="cn-0.27.1">其他变更</h3>
+
+- 删除整套 footer 车道量宽机制（`lib/footer-layout.mjs` 及其测试、`FOOTER_PROBE_STYLE`、`ImportButton` 的三种形态与 wrap 注入）：入口不在 footer 槽之后它已无使用者。
+- README 与 USAGE（中英）里的入口位置说明同步改成侧栏图标列表。
+
+<h3 id="en-0.27.1">New Features</h3>
+
+- The entry moved into the left sidebar's **icon list** (`sidebar.panellist`): the same column as Plugins, Scheduled tasks and Context insights, order 15 (right after Scheduled tasks, before Context insights). It opens a **full page in the main area** (the `main` slot under the same key) instead of a right-hand drawer: header with the plugin mark, title and a one-line description, **Open in side panel** on the right, and the Discover / Import / Export sub-tabs underneath.
+- The entry icon is the new brand mark (two arrows facing each other inside a rounded square), drawn by the registered component from `ownerProps { size, active }` and tinted with the accent colour when active.
+
+<h3 id="en-0.27.1">Improvements</h3>
+
+- The three sub-tabs adapt to the full-page form (tab buttons no longer stretch to equal thirds; the content column is capped at 1040px and centred). The right-sidebar form is unchanged.
+- The `sidebarButton` setting now reads as "the entry in the left sidebar's icon list"; turning it off hides the icon and the panel stays reachable from the right sidebar.
+
+<h3 id="en-0.27.1">Bug Fixes</h3>
+
+- Removed the now-unreferenced `trigger.title` dictionary key (it only fed the footer button's tooltip), so the dictionary has no dead entries.
+
+<h3 id="en-0.27.1">Chores</h3>
+
+- Removed the whole footer-lane measuring machinery (`lib/footer-layout.mjs` and its tests, `FOOTER_PROBE_STYLE`, `ImportButton`'s three states and wrap injection): with the entry out of the footer slot it had no consumers left.
+- The entry-point description in the READMEs and the USAGE docs (both languages) now points at the sidebar icon list.
+
+**Full Changelog**: [v0.27.0...v0.27.1](https://github.com/95moon/dsh-session-migration/compare/v0.27.0...v0.27.1)
+
 ## [0.27.0] - 2026-11-15
 
 [中文](#cn-0.27.0) | [English](#en-0.27.0)
