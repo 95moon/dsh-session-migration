@@ -1,7 +1,7 @@
 {
   "name": "dsh-session-migration",
   "description": "Move AI coding agent conversations between tools through DeepSeek Harness: import 37 agent formats as resumable sessions (tool calls, reasoning and results kept intact), export back to Claude Code / Codex / Kimi / opencode, and get a generated handoff document plus a lossless archive of the full history so the target tool can carry on. | 在 DeepSeek Harness 里迁移 AI 编程 Agent 的对话：37 种来源导入为可续聊会话（工具调用、推理与结果都保留），可导出回 Claude Code / Codex / Kimi / opencode，并自动生成交接书与完整历史归档，让目标工具直接接着干。",
-  "version": "0.27.1",
+  "version": "0.27.2",
   "type": "module",
   "main": "./lib/index.mjs",
   "types": "./lib/index.d.ts",

@@ -2,6 +2,28 @@
 
 All notable changes to `dsh-session-migration` are documented here, newest first.
 
+## [0.27.2] - 2026-11-16
+
+[中文](#cn-0.27.2) | [English](#en-0.27.2)
+
+<h3 id="cn-0.27.2">问题修复</h3>
+
+- **带图片的会话导出不再崩溃**：宿主交给插件的会话事件是冻结的，而导出前的图片解引用却就地改写块数组，于是 claude / codex / codex-native 这三种会内联图片的格式一律报 `Cannot assign to read only property '0' of object '[object Array]'`（面板里只留一行红字，看不出原因）。改为写时复制：只在确实换掉内容块时才复制那一层，未改动的事件按引用透传。
+
+<h3 id="cn-0.27.2">其他变更</h3>
+
+- 新增回归测试 `test/export-images.test.mjs`：在深度冻结的事件上验证「不抛错、不改写输入、图片仍内联、读不到字节时降级为占位、无图片的事件按引用透传」。
+
+<h3 id="en-0.27.2">Bug Fixes</h3>
+
+- **Exporting a session with images no longer crashes**: the host hands plugins frozen session events, but the pre-export image dereference wrote into the block arrays in place, so claude / codex / codex-native — the three formats that inline images — all failed with `Cannot assign to read only property '0' of object '[object Array]'`. It now copies on write: only the layer that actually changes is rebuilt, and untouched events pass through by reference.
+
+<h3 id="en-0.27.2">Chores</h3>
+
+- New regression test `test/export-images.test.mjs` covering deeply frozen events: no throw, input untouched, images still inlined, unreadable bytes degrade to a placeholder, and image-free events pass through by reference.
+
+**Full Changelog**: [v0.27.1...v0.27.2](https://github.com/95moon/dsh-session-migration/compare/v0.27.1...v0.27.2)
+
 ## [0.27.1] - 2026-11-16
 
 [中文](#cn-0.27.1) | [English](#en-0.27.1)
